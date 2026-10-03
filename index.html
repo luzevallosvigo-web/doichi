@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2C200">
+<title>Doichi</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Doichi">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --paper:#FFFFFF; --ink:#1D1D1B; --muted:#6E6C66; --line:#E4E2DC; --soft:#F2F1ED;
+  --yellow:#F2C200; --green:#2F7A4E; --red:#C33A2E; --blue:#2C5AA0;
+  --on-dark:#FFFFFF; --on-yellow:#1D1D1B;
+  --ok:#2F7A4E; --warn:#B7791F; --bad:#C33A2E;
+  --hl:#DCEFE3; --strike:#FBE4E1; --focus:#2C5AA0;
+  --serif:'Literata',Georgia,'Times New Roman',serif;
+  --cond:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
+  --sans:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17181A; --ink:#ECEBE6; --muted:#9E9D97; --line:#2F3034; --soft:#232428;
+    --green:#3E9663; --red:#D5574B; --blue:#4677C4; --ok:#4FB078; --bad:#E06A5E; --warn:#D9A040;
+    --hl:#1E3B2A; --strike:#40231F; --focus:#8FB3F0;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17181A; --ink:#ECEBE6; --muted:#9E9D97; --line:#2F3034; --soft:#232428;
+  --green:#3E9663; --red:#D5574B; --blue:#4677C4; --ok:#4FB078; --bad:#E06A5E; --warn:#D9A040;
+  --hl:#1E3B2A; --strike:#40231F; --focus:#8FB3F0;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.5 var(--sans)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:14px}
+[hidden]{display:none !important}
+
+#app{height:100%}
+.screen{height:100%;max-width:680px;margin:0 auto;display:flex;flex-direction:column}
+
+/* Home */
+#home{display:block;overflow-y:auto;padding:28px 18px 36px}
+.brand{font-family:var(--cond);font-weight:700;font-size:76px;line-height:.88;letter-spacing:-.015em;margin:0}
+.hello{font-family:var(--serif);font-size:19px;line-height:1.45;margin:12px 0 26px;color:var(--muted)}
+.hello b{color:var(--ink);font-weight:500}
+.book{display:block;width:100%;text-align:left;border:0;padding:11px;margin:0 0 12px;border-radius:3px;background:var(--c);color:var(--on)}
+.book .frame{display:block;border:1.5px solid currentColor;padding:14px 16px 16px}
+.book .t{font-family:var(--cond);font-weight:700;font-size:34px;line-height:1;display:block}
+.book .de{font-family:var(--serif);font-style:italic;font-size:16px;display:block;margin:9px 0 1px}
+.book .es{font-size:14px;opacity:.85;display:block}
+.book:active{transform:translateY(1px)}
+.settings{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:14px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.field label,.field span{font-weight:500}
+.field input{width:150px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font:inherit;font-size:16px;background:var(--paper);color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:4px 12px;border-radius:999px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.note{font-size:14px;color:var(--muted);margin:0}
+.field.stack{display:grid;gap:6px;justify-content:stretch}
+.field.stack input{width:100%}
+.keyrow{display:flex;gap:6px}
+.keyrow input{flex:1}
+.status{font-size:14px;margin:0}
+.status.ok{color:var(--ok)} .status.bad{color:var(--bad)}
+.settings h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0}
+.settings a{color:var(--ink)}
+.err .detail{font-size:13px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.banner{background:var(--soft);border-left:3px solid var(--bad);padding:10px 12px;margin:0 0 18px;font-size:15px}
+
+/* Module chrome */
+.bar{flex:none;background:var(--c);color:var(--on);padding:6px 16px 14px}
+.bar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px}
+.back{border:0;background:none;padding:6px 8px 6px 0;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:2px}
+.tools{display:flex;gap:6px;align-items:center}
+.pill{border:1.5px solid currentColor;background:none;border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600}
+.pill[aria-pressed="true"]{background:var(--on);color:var(--c)}
+.bar h1{font-family:var(--cond);font-weight:700;font-size:32px;line-height:1.02;margin:2px 0 0}
+.bar p{margin:3px 0 0;font-size:14px;opacity:.88}
+.feed{flex:1;min-height:0;overflow-y:auto;padding:6px 16px 24px;overscroll-behavior:contain}
+.empty{color:var(--muted);text-align:center;padding:44px 12px;font-size:15px}
+.empty .big{font-family:var(--serif);font-style:italic;font-size:21px;color:var(--ink);display:block;margin-bottom:6px}
+
+.composer{flex:none;border-top:1px solid var(--line);background:var(--paper);padding:10px 12px;display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);border-radius:21px;padding:9px 15px;font:inherit;font-size:16px;line-height:1.4;max-height:140px;background:var(--paper);color:var(--ink)}
+.composer textarea:disabled{background:var(--soft)}
+.send,.mic{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;padding:0}
+.send{border:0;background:var(--c);color:var(--on)}
+.send:disabled{opacity:.35}
+.send .i-stop{display:none}.send.stop .i-send{display:none}.send.stop .i-stop{display:grid}
+.mic{border:1px solid var(--line);background:none}
+.mic.rec{background:var(--bad);border-color:var(--bad);color:#fff}
+.ic,.send span{display:grid;place-items:center}
+.strip{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px 0;font-size:14px;color:var(--muted)}
+
+/* Turns */
+.turn{padding:12px 0 18px;border-bottom:1px solid var(--line)}
+.turn:last-child{border-bottom:0}
+.qrow{display:flex;justify-content:flex-end;margin:4px 0 12px}
+.qbubble{background:var(--soft);border-radius:16px;padding:6px 14px;max-width:85%;overflow-wrap:anywhere}
+.qbubble.de{font-family:var(--serif)}
+.line{margin:0 0 10px;overflow-wrap:anywhere}
+.lbl{font-weight:600}
+.de-text{font-family:var(--serif);font-style:italic;font-size:17px}
+.de-big{font-family:var(--serif);font-size:21px;line-height:1.45}
+.bd{margin:6px 0 12px;padding-left:20px}
+.bd li{margin:0 0 7px}
+.frag{font-family:var(--serif);font-weight:500;border:0;background:none;padding:0;text-align:left;text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3px}
+.frag.focus{background:linear-gradient(transparent 58%, rgba(242,194,0,.55) 0)}
+.func{color:var(--muted)}
+.say{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:inline-grid;place-items:center;vertical-align:-8px;padding:0;color:var(--ink)}
+.say.playing,.frag.playing{color:var(--focus);border-color:var(--focus)}
+.others{display:grid;gap:6px;margin-top:4px}
+.other{border:0;border-left:3px solid var(--line);background:none;text-align:left;padding:4px 10px;font-family:var(--serif);font-style:italic;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:5px 12px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--c);color:var(--on);border-color:transparent}
+.primary{background:var(--c);color:var(--on);border:0;border-radius:999px;padding:10px 22px;font-weight:600;margin-top:18px}
+
+.verdict{display:inline-flex;align-items:center;gap:7px;font-weight:600;margin:0 0 10px;font-size:16px}
+.verdict .dot{width:11px;height:11px;border-radius:50%}
+.v-correct .dot{background:var(--ok)}.v-almost .dot{background:var(--warn)}.v-wrong .dot{background:var(--bad)}
+del.x{background:var(--strike);text-decoration:line-through;text-decoration-color:var(--bad);border-radius:2px;padding:0 2px}
+ins.x{background:var(--hl);text-decoration:none;border-radius:2px;padding:0 2px}
+.pair{border-left:3px solid var(--c);padding:2px 0 2px 12px;margin:4px 0 12px}
+.pair .line:last-child{margin-bottom:0}
+.errs{margin:0 0 12px;padding-left:20px;font-size:15px}
+.errs li{margin-bottom:5px}
+.tip{background:var(--soft);padding:9px 12px;border-radius:4px;font-size:15px;margin:0}
+
+/* Lesefreund pages panel */
+.pages{flex:none;padding:12px 16px;border-bottom:1px solid var(--line)}
+.drop{width:100%;border:1.5px dashed var(--ink);border-radius:4px;padding:22px 14px;background:none;text-align:center}
+.drop strong{display:block;font-family:var(--cond);font-size:23px;font-weight:700;line-height:1.1}
+.drop span{font-size:14px;color:var(--muted)}
+.drop:disabled{opacity:.45}
+.thumbs{display:flex;gap:6px;overflow-x:auto;margin:0 0 8px}
+.thumbs img{height:58px;border-radius:2px;border:1px solid var(--line);flex:none}
+.pstat{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
+.pstat .ready{font-weight:600;margin-right:auto}
+.ghost{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 12px;font-size:14px}
+.ocrtext{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:15px;line-height:1.55;background:var(--soft);padding:12px;margin:10px 0 0;border-radius:4px}
+
+/* Kaffeeklatsch */
+.msg{display:flex;flex-direction:column;margin:12px 0}
+.msg.her{align-items:flex-start}.msg.me{align-items:flex-end}
+.who{font-size:12px;color:var(--muted);margin:0 6px 3px}
+.bubble{max-width:86%;padding:9px 14px;border-radius:18px;font-family:var(--serif);font-size:17px;line-height:1.45;overflow-wrap:anywhere}
+.her .bubble{background:var(--soft);border-bottom-left-radius:5px}
+.me .bubble{background:var(--c);color:var(--on);border-bottom-right-radius:5px}
+.meta{display:flex;gap:6px;margin-top:5px;align-items:center}
+.mini{border:0;background:none;padding:2px 4px;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+.tr{font-size:14px;color:var(--muted);margin-top:4px;max-width:86%}
+.fix{max-width:86%;font-size:14px;margin-top:7px;border-right:3px solid var(--yellow);padding:2px 10px;text-align:right}
+.fix .better{font-family:var(--serif);font-style:italic;font-size:15px;display:block;color:var(--ink)}
+.fix .why{color:var(--muted)}
+.start{padding:30px 2px}
+.start .big{font-family:var(--serif);font-size:22px;margin:0 0 4px}
+
+.thinking{color:var(--muted);font-size:15px;display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.dots i{animation:none;opacity:.6}}
+.err{border-left:3px solid var(--bad);padding:6px 12px;font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 15px;border-radius:18px;font-size:14px;max-width:90vw;z-index:9;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="home" class="screen" aria-label="Doichi"></section>
+  <section id="lese" class="screen" hidden></section>
+  <section id="satz" class="screen" hidden></section>
+  <section id="sag" class="screen" hidden></section>
+  <section id="kaffee" class="screen" hidden></section>
+</div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+function h(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on") && typeof v === "function") n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) {
+    if (c == null || c === false || c === "") continue;
+    n.append(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return n;
+}
+const str = v => typeof v === "string" ? v.trim() : (v == null ? "" : String(v).trim());
+const arr = v => Array.isArray(v) ? v : [];
+const noDot = s => s.replace(/[.\s]+$/, "");
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("doichi." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("doichi." + k, JSON.stringify(v)); } catch {} }
+};
+const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false) };
+const userName = () => (settings.name || "").trim() || "Axel";
+
+const ICON = {
+  speak: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>',
+  send: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>',
+  back: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>'
+};
+
+let toastTimer;
+function toast(msg) {
+  let t = $(".toast");
+  if (!t) { t = h("div", { class: "toast", role: "status" }); document.body.append(t); }
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4500);
+}
+function thinking(label = "Denkt nach") {
+  const hint = h("span", { class: "small", hidden: true, text: "(a veces tarda hasta un minuto)" });
+  const node = h("div", { class: "thinking" }, label, h("span", { class: "dots" }, h("i"), h("i"), h("i")), hint);
+  setTimeout(() => { if (node.isConnected) hint.hidden = false; }, 9000);
+  return node;
+}
+const toEnd = feed => requestAnimationFrame(() => { feed.scrollTop = feed.scrollHeight; });
+const toTop = (feed, node) => requestAnimationFrame(() => { feed.scrollTop = Math.max(0, node.offsetTop - feed.offsetTop - 8); });
+
+/* ---------- speech ---------- */
+let deVoice = null;
+function pickVoice() {
+  const vs = speechSynthesis.getVoices();
+  deVoice = vs.find(v => /^de[-_]DE/i.test(v.lang) && /google|natural|premium|enhanced|neural/i.test(v.name))
+    || vs.find(v => /^de[-_]DE/i.test(v.lang)) || vs.find(v => /^de/i.test(v.lang)) || null;
+}
+if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text, btn) {
+  if (!("speechSynthesis" in window)) { toast("Este navegador no puede reproducir audio."); return; }
+  const wasPlaying = btn && btn.classList.contains("playing");
+  speechSynthesis.cancel();
+  document.querySelectorAll(".playing").forEach(b => b.classList.remove("playing"));
+  if (wasPlaying || !text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE"; if (deVoice) u.voice = deVoice;
+  u.rate = settings.slow ? 0.72 : 0.95;
+  if (btn) { btn.classList.add("playing"); const off = () => btn.classList.remove("playing"); u.onend = off; u.onerror = off; }
+  setTimeout(() => speechSynthesis.speak(u), 60);
+}
+function sayBtn(text) {
+  const b = h("button", { class: "say", type: "button", "aria-label": "Anhören", title: "Anhören" });
+  b.innerHTML = ICON.speak; b.addEventListener("click", () => speak(text, b));
+  return b;
+}
+
+/* ---------- Gemini ---------- */
+const API = "https://generativelanguage.googleapis.com/v1beta";
+const cfg = {
+  key: store.get("gm.key", ""),
+  model: store.get("gm.model", "gemini-flash-latest"),
+  fast: store.get("gm.fast", "gemini-3.5-flash-lite")
+};
+function parseJSON(t) {
+  try { return JSON.parse(t); } catch {}
+  const f = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (f) { try { return JSON.parse(f[1]); } catch {} }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
+  return undefined;
+}
+function httpError(status, msg) {
+  const m = msg || "";
+  if (status === 429) return { code: "rate_limited", message: m };
+  if (status === 404) return { code: "model_not_found", message: m };
+  if (status === 401 || status === 403 || /api[ _]?key/i.test(m)) return { code: "bad_key", message: m };
+  if (/location|region|country/i.test(m)) return { code: "region", message: m };
+  if (status >= 500) return { code: "upstream_error", message: m };
+  return { code: "bad_request", message: m };
+}
+async function ask(kind, prompt, opts = {}) {
+  if (!cfg.key) throw { code: "no_key" };
+  const model = opts.modelTier === "quick" ? cfg.fast : cfg.model;
+  const parts = [{ text: prompt }];
+  for (const img of opts.images || []) parts.push({ inline_data: { mime_type: img.mime, data: img.data } });
+  const body = { contents: [{ role: "user", parts }], generationConfig: { temperature: kind === "json" ? 0.4 : 0.1 } };
+  if (kind === "json") body.generationConfig.responseMimeType = "application/json";
+  let res;
+  try {
+    res = await fetch(`${API}/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": cfg.key },
+      body: JSON.stringify(body),
+      signal: opts.signal
+    });
+  } catch (e) {
+    if ((opts.signal && opts.signal.aborted) || (e && e.name === "AbortError")) throw { code: "cancelled" };
+    throw { code: "network" };
+  }
+  let data = null;
+  try { data = await res.json(); } catch { if (opts.signal && opts.signal.aborted) throw { code: "cancelled" }; }
+  if (!res.ok) throw httpError(res.status, data && data.error && data.error.message);
+  const cand = data && data.candidates && data.candidates[0];
+  if (!cand) throw { code: data && data.promptFeedback && data.promptFeedback.blockReason ? "refused" : "empty_completion" };
+  const text = ((cand.content && cand.content.parts) || []).filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("").trim();
+  if (!text) throw { code: /SAFETY|BLOCK|PROHIBITED/.test(cand.finishReason || "") ? "refused" : "empty_completion" };
+  if (kind !== "json") return { text, truncated: cand.finishReason === "MAX_TOKENS" };
+  const parsed = parseJSON(text);
+  if (parsed === undefined) throw { code: "invalid_json" };
+  return parsed;
+}
+async function listModels(key) {
+  let res;
+  try { res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": key } }); }
+  catch { throw { code: "network" }; }
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok) throw httpError(res.status, data && data.error && data.error.message);
+  return (data.models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+    .map(m => String(m.name || "").replace(/^models\//, ""))
+    .filter(n => /^gemini/.test(n) && !/tts|image|live|embedding|transcribe|robotics|audio/.test(n));
+}
+const ERR_COPY = {
+  no_key: "Falta tu clave de Gemini. Pégala en Einstellungen (pantalla de inicio).",
+  bad_key: "Gemini rechazó la clave. Revisa que esté bien copiada en Einstellungen.",
+  model_not_found: "Ese modelo no existe o tu clave no tiene acceso. Elige otro en Einstellungen.",
+  region: "Gemini no está disponible desde tu ubicación con esta clave.",
+  rate_limited: "Límite del plan gratuito alcanzado. Espera un minuto; si persiste, el límite diario se reinicia mañana.",
+  network: "Sin conexión con Gemini. Revisa tu internet.",
+  upstream_error: "Gemini está saturado ahora mismo. Pulsa «Nochmal» en un momento.",
+  bad_request: "Gemini no pudo procesar esta consulta.",
+  refused: "Gemini no respondió a esta consulta. Prueba con otra frase.",
+  invalid_json: "La respuesta llegó con formato incorrecto. Pulsa «Nochmal».",
+  empty_completion: "Llegó una respuesta vacía. Pulsa «Nochmal»."
+};
+const FATAL = new Set(["no_key", "bad_key", "model_not_found", "region"]);
+const errText = e => ERR_COPY[e && e.code] || "No se pudo conectar con Gemini. Pulsa «Nochmal».";
+const openSettings = () => { location.hash = "home"; setTimeout(() => { const k = $("#gk"); if (k) { k.scrollIntoView({ block: "center" }); k.focus(); } }, 80); };
+function errBox(e, retry) {
+  if (e && e.code === "cancelled") return h("div", { class: "muted small", text: "Abgebrochen." });
+  const box = h("div", { class: "err" }, h("div", { text: errText(e) }));
+  if (e && e.message && !["rate_limited", "network"].includes(e.code)) box.append(h("div", { class: "detail", text: e.message }));
+  if (FATAL.has(e && e.code)) box.append(h("button", { class: "ghost", type: "button", style: "margin-top:8px", onclick: openSettings }, "Einstellungen öffnen"));
+  if (retry && !FATAL.has(e && e.code)) {
+    box.append(h("button", { class: "ghost", type: "button", style: "margin-top:8px", onclick: () => { box.remove(); retry(); } }, "Nochmal"));
+  }
+  return box;
+}
+
+/* ---------- prompts ---------- */
+const OCR_PROMPT = (first, count) => `${count === 1 ? "La imagen es una foto de una página" : `Las ${count} imágenes son fotos de páginas`} de un libro en alemán${count > 1 ? ", en orden" : ""}.
+Transcribe el texto alemán exactamente como aparece: misma ortografía, mayúsculas, puntuación y comillas (»…«, „…“).
+- Une las palabras cortadas con guion al final de línea.
+- Une las líneas de un mismo párrafo en una sola línea y separa los párrafos con una línea vacía.
+- Omite números de página, encabezados o pies de página repetidos y todo lo que no sea el texto del libro.
+- Antes del texto de cada imagen escribe una línea así: ===SEITE n=== (la primera es la ${first}).
+- Si una parte es ilegible, escribe [unleserlich].
+Responde solo con la transcripción, sin comentarios.`;
+
+function LESE_PROMPT(text, q, forced) {
+  return `Eres un profesor de alemán muy preciso. Tu alumno es hispanohablante (nivel B1) y está leyendo este libro:
+
+<texto>
+${text}
+</texto>
+
+${forced
+  ? `Analiza exactamente esta oración del texto: «${forced}». El alumno buscaba: «${q}».`
+  : `El alumno busca: «${q}». Encuéntralo en el texto. Acepta formas flexionadas o conjugadas, verbos separables separados (como «fängt … an») y pequeñas diferencias de mayúsculas o de lectura. Elige la oración completa donde aparece (la primera aparición).`}
+
+Responde SOLO con JSON:
+{"found": true,
+ "sentence": "la oración completa en alemán, tal cual está en el texto",
+ "translation": "traducción al español natural y en contexto",
+ "breakdown": [{"de": "palabra o grupo de palabras", "es": "significado en esta oración", "func": "función gramatical (caso, género, tiempo, régimen, expresión fija…)", "focus": false}],
+ "function": "1–2 frases: qué papel cumple «${q}» en la oración",
+ "others": ["otras oraciones completas del texto donde también aparece (máx. 4)"]}
+Si no aparece en el texto: {"found": false, "suggestions": ["hasta 5 palabras o expresiones del texto que se parezcan"]}
+
+Reglas:
+- breakdown recorre la oración en orden y agrupa como lo haría un buen profesor (artículo + sustantivo, verbo + partícula, expresiones fijas). En oraciones largas agrupa más: máximo 10 elementos.
+- "focus": true solo en el elemento que contiene lo buscado.
+- "es" y "func" muy breves (máx. 15 palabras cada uno). Precisión ante todo; si algo es ambiguo, dilo.${forced ? '\n- "others": [].' : ""}`;
+}
+
+const SATZ_PROMPT = t => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel B1) escribió esta frase en alemán:
+
+«${t}»
+
+Evalúala. Responde SOLO con JSON:
+{"verdict": "correct" | "almost" | "wrong",
+ "corrected": "…",
+ "translation": "…",
+ "errors": [{"wrong": "fragmento original", "right": "corrección", "why": "explicación brevísima en español"}],
+ "tip": "…"}
+
+Criterios:
+- "correct": gramaticalmente correcta y natural. Las variantes de estilo no son errores; ignora si falta el punto final. corrected = la frase original tal cual; errors = [].
+- "almost": se entiende, pero tiene errores o suena poco natural. corrected = una versión natural de nivel aproximado B2 que mantiene lo que quería decir.
+- "wrong": muy incorrecta o difícil de entender. corrected = lo que seguramente quiso decir, en alemán simple y natural.
+- translation = traducción al español natural y en contexto de "corrected".
+- errors: como máximo 4, los más importantes.
+- tip: un consejo breve en español solo si de verdad ayuda; si no, "".`;
+
+const SAG_PROMPT = (t, reg) => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel B1) quiere decir esto en alemán:
+
+«${t}»
+
+${reg === "du" ? "Usa el tuteo (du / ihr)." : reg === "Sie" ? "Usa el trato formal (Sie)." : "Elige du o Sie según el contexto; si no está claro, usa du."}
+
+Responde SOLO con JSON:
+{"german": "cómo lo diría un nativo, natural y en contexto",
+ "alt": "una alternativa habitual (otra formulación u otro registro), o vacío",
+ "breakdown": [{"de": "palabra o grupo de palabras de la frase alemana", "es": "significado aquí", "func": "función gramatical breve"}],
+ "note": "la clave gramatical o de uso más importante, en 1 frase, o vacío"}
+
+Reglas: breakdown recorre "german" en orden y agrupa como un buen profesor (máximo 10 elementos). "es" y "func" muy breves (máx. 15 palabras). Si el texto tiene varias frases, tradúcelas todas en "german".`;
+
+/* ---------- modules ---------- */
+const MODS = [
+  { id: "lese", name: "Lesefreund", c: "var(--yellow)", on: "var(--on-yellow)", de: "Foto vom Buch, Wort eingeben, Satz verstehen.", es: "Fotografía tu libro y entiende cada oración." },
+  { id: "satz", name: "Satzdoktor", c: "var(--green)", on: "var(--on-dark)", de: "Schreib einen Satz. Ich korrigiere ihn.", es: "Escribe en alemán y te digo si está bien." },
+  { id: "sag", name: "Sag's auf Deutsch!", c: "var(--red)", on: "var(--on-dark)", de: "Auf Spanisch denken, auf Deutsch sagen.", es: "Escribe en español y aprende cómo se dice." },
+  { id: "kaffee", name: "Kaffeeklatsch", c: "var(--blue)", on: "var(--on-dark)", de: "Plaudern wie im Café.", es: "Conversa en alemán con correcciones breves." }
+];
+const SCREENS = ["home", ...MODS.map(m => m.id)];
+const route = () => { const r = location.hash.slice(1); return SCREENS.includes(r) ? r : "home"; };
+function show(id) {
+  for (const s of SCREENS) $("#" + s).hidden = s !== id;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
+window.addEventListener("hashchange", () => show(route()));
+const goHome = () => { location.hash = "home"; };
+
+function buildScreen(mod, sub) {
+  const sec = $("#" + mod.id);
+  sec.style.setProperty("--c", mod.c); sec.style.setProperty("--on", mod.on);
+  const back = h("button", { class: "back", type: "button", onclick: goHome }); back.innerHTML = ICON.back; back.append("Doichi");
+  const tools = h("div", { class: "tools" });
+  const subP = h("p", { text: sub });
+  const feed = h("main", { class: "feed", "aria-live": "polite" });
+  sec.append(h("header", { class: "bar" }, h("div", { class: "row" }, back, tools), h("h1", { text: mod.name }), subP), feed);
+  return { sec, feed, tools, subP };
+}
+
+function makeComposer(sec, { placeholder, onSend, before, autocorrect = true }) {
+  const ta = h("textarea", { rows: "1", placeholder, "aria-label": placeholder, enterkeyhint: "send", autocapitalize: "sentences",
+    autocorrect: autocorrect ? "on" : "off", spellcheck: autocorrect ? "true" : "false" });
+  const send = h("button", { class: "send", type: "button", "aria-label": "Senden" });
+  send.innerHTML = `<span class="i-send">${ICON.send}</span><span class="i-stop">${ICON.stop}</span>`;
+  const wrap = h("footer", { class: "composer" }, before || null, ta, send);
+  sec.append(wrap);
+  let ctl = null, disabled = false;
+  const sync = () => { ta.disabled = disabled; send.disabled = disabled && !ctl; };
+  const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 140) + "px"; };
+  ta.addEventListener("input", grow);
+  const submit = () => { const v = ta.value.trim(); if (!v || ctl || disabled) return; ta.value = ""; grow(); onSend(v); };
+  ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(); } });
+  send.addEventListener("click", () => { if (ctl) ctl.abort(); else submit(); });
+  return {
+    ta, wrap,
+    get busy() { return !!ctl; },
+    start() { ctl = new AbortController(); send.classList.add("stop"); send.setAttribute("aria-label", "Stopp"); sync(); return ctl.signal; },
+    end() { ctl = null; send.classList.remove("stop"); send.setAttribute("aria-label", "Senden"); sync(); },
+    setDisabled(v) { disabled = v; sync(); },
+    abort() { if (ctl) ctl.abort(); }
+  };
+}
+
+function lineEl(label, value, cls) {
+  return h("p", { class: "line" }, h("span", { class: "lbl" }, label + " "), cls ? h("span", { class: cls }, value) : value);
+}
+function breakdownEl(items) {
+  const ul = h("ul", { class: "bd" });
+  for (const it of arr(items)) {
+    const de = str(it && it.de); if (!de) continue;
+    const f = h("button", { class: "frag" + (it.focus === true ? " focus" : ""), type: "button", title: "Anhören" }, de);
+    f.addEventListener("click", () => speak(de, f));
+    const es = noDot(str(it.es)), fn = noDot(str(it.func));
+    ul.append(h("li", null, f, " → ", es, fn ? h("span", { class: "func" }, (es ? ". " : "") + fn + ".") : (es ? "." : "")));
+  }
+  return ul;
+}
+function emptyEl(big, small) { return h("div", { class: "empty" }, h("span", { class: "big", text: big }), small); }
+
+/* ---------- Home ---------- */
+function initHome() {
+  const home = $("#home");
+  const hello = h("p", { class: "hello" });
+  const renderHello = () => hello.replaceChildren("Hallo, ", h("b", { text: userName() }), ". Was übst du heute?");
+  renderHello();
+  const banner = h("p", { class: "banner", hidden: !!cfg.key },
+    "Primer paso: crea tu clave gratis de Gemini y pégala abajo en Einstellungen. ",
+    h("button", { class: "mini", type: "button", style: "color:inherit", onclick: openSettings }, "Ir a Einstellungen"));
+  const books = MODS.map(m => {
+    const b = h("button", { class: "book", type: "button", onclick: () => { location.hash = m.id; } },
+      h("span", { class: "frame" }, h("span", { class: "t", text: m.name }), h("span", { class: "de", text: m.de }), h("span", { class: "es", text: m.es })));
+    b.style.setProperty("--c", m.c); b.style.setProperty("--on", m.on);
+    return b;
+  });
+  const nameIn = h("input", { id: "nm", type: "text", value: settings.name, autocomplete: "given-name" });
+  nameIn.addEventListener("change", () => { settings.name = nameIn.value.trim() || "Axel"; nameIn.value = settings.name; store.set("name", settings.name); renderHello(); });
+  const segBtns = [["Normal", false], ["Langsam", true]].map(([t, v]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(settings.slow === v) }, t);
+    b.addEventListener("click", () => { settings.slow = v; store.set("slow", v); segBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); speak("Hallo! So klingt das Sprechtempo."); });
+    return b;
+  });
+  const keyIn = h("input", { id: "gk", type: "password", value: cfg.key, placeholder: "AIza…", autocomplete: "off", spellcheck: "false" });
+  const eye = h("button", { class: "ghost", type: "button" }, "Ver");
+  eye.addEventListener("click", () => { const vis = keyIn.type === "password"; keyIn.type = vis ? "text" : "password"; eye.textContent = vis ? "Ocultar" : "Ver"; });
+  const saveKey = () => { cfg.key = keyIn.value.trim(); keyIn.value = cfg.key; store.set("gm.key", cfg.key); banner.hidden = !!cfg.key; };
+  keyIn.addEventListener("change", saveKey);
+  const dl = h("datalist", { id: "gm-models" });
+  const modelIn = h("input", { id: "gm", type: "text", value: cfg.model, list: "gm-models", autocomplete: "off", spellcheck: "false" });
+  modelIn.addEventListener("change", () => { cfg.model = modelIn.value.trim() || "gemini-flash-latest"; modelIn.value = cfg.model; store.set("gm.model", cfg.model); });
+  const fastIn = h("input", { id: "gf", type: "text", value: cfg.fast, list: "gm-models", autocomplete: "off", spellcheck: "false" });
+  fastIn.addEventListener("change", () => { cfg.fast = fastIn.value.trim() || "gemini-3.5-flash-lite"; fastIn.value = cfg.fast; store.set("gm.fast", cfg.fast); });
+  const status = h("p", { class: "status", role: "status" });
+  const test = h("button", { class: "ghost", type: "button" }, "Verbindung testen");
+  test.addEventListener("click", async () => {
+    saveKey();
+    if (!cfg.key) { status.className = "status bad"; status.textContent = ERR_COPY.no_key; return; }
+    test.disabled = true; status.className = "status"; status.textContent = "Prüfe…";
+    try {
+      const names = await listModels(cfg.key);
+      dl.replaceChildren(...names.map(n => h("option", { value: n })));
+      const missing = [cfg.model, cfg.fast].filter(m => !names.includes(m) && !/latest$/.test(m));
+      status.className = missing.length ? "status bad" : "status ok";
+      status.textContent = missing.length
+        ? `Clave OK, pero no encuentro: ${missing.join(", ")}. Toca el campo de modelo para ver la lista.`
+        : `Verbindung OK. ${names.length} modelos disponibles.`;
+    } catch (e) { status.className = "status bad"; status.textContent = errText(e); }
+    finally { test.disabled = false; }
+  });
+  home.append(
+    h("h1", { class: "brand", text: "Doichi" }), hello, banner, ...books,
+    h("div", { class: "settings" },
+      h("h2", { text: "Einstellungen" }),
+      h("div", { class: "field stack" }, h("label", { for: "gk" }, "Gemini API-Schlüssel"), h("div", { class: "keyrow" }, keyIn, eye),
+        h("p", { class: "note" }, "Gratis en ", h("a", { href: "https://aistudio.google.com/apikey", target: "_blank", rel: "noopener" }, "aistudio.google.com/apikey"), ". Se guarda solo en este dispositivo.")),
+      h("div", { class: "field stack" }, h("label", { for: "gm" }, "Modell (Lesefreund, Satzdoktor, Sag's)"), modelIn),
+      h("div", { class: "field stack" }, h("label", { for: "gf" }, "Schnelles Modell (Kaffeeklatsch)"), fastIn, dl),
+      h("div", { class: "field" }, test), status,
+      h("div", { class: "field" }, h("label", { for: "nm" }, "Dein Name"), nameIn),
+      h("div", { class: "field" }, h("span", null, "Sprechtempo"), h("div", { class: "seg", role: "group", "aria-label": "Sprechtempo" }, segBtns)),
+      h("p", { class: "note", text: "En el plan gratuito, Google puede usar tus consultas para mejorar sus productos. No escribas datos privados." }))
+  );
+}
+
+/* ---------- A: Lesefreund ---------- */
+function readAsDataURL(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file); });
+}
+async function prepImage(file) {
+  const url = await readAsDataURL(file);
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("decode")); i.src = url; });
+  const k = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const out = c.toDataURL("image/jpeg", 0.88);
+  return { mime: "image/jpeg", data: out.split(",")[1], url: out };
+}
+function initLese() {
+  const mod = MODS[0];
+  const { sec, feed } = buildScreen(mod, "Sube fotos de tu libro, escribe una palabra y entiende la oración.");
+  const state = { text: store.get("lese.text", ""), pages: store.get("lese.pages", 0), lastErr: null };
+  const save = () => { store.set("lese.text", state.text); store.set("lese.pages", state.pages); };
+  const panel = h("div", { class: "pages" });
+  sec.insertBefore(panel, feed);
+  const file = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true });
+  file.addEventListener("change", () => { const fs = [...file.files]; file.value = ""; if (fs.length) transcribe(fs); });
+  sec.append(file);
+  const comp = makeComposer(sec, { placeholder: "Wort oder Ausdruck eingeben…", onSend: q => lookup(q), autocorrect: false });
+  let showText = false, results = 0;
+
+  function renderEmpty() {
+    if (results) return;
+    feed.replaceChildren(state.text
+      ? emptyEl("Welches Wort suchst du?", "Escribe una palabra o frase que veas en la página.")
+      : emptyEl("Noch keine Seiten.", "Sube una o varias fotos de tu libro para empezar."));
+  }
+  function renderPanel(progress) {
+    panel.replaceChildren();
+    if (progress) {
+      panel.append(h("div", { class: "thumbs" }, progress.urls.map(u => h("img", { src: u, alt: "" }))), progress.node);
+      comp.setDisabled(true); return;
+    }
+    if (!state.text) {
+      const drop = h("button", { class: "drop", type: "button", onclick: () => file.click() },
+        h("strong", { text: "Fotos vom Buch hochladen" }), h("span", { text: "Sube una o varias fotos de las páginas" }));
+      panel.append(drop);
+    } else {
+      const ocr = h("div", { class: "ocrtext", hidden: !showText, text: state.text });
+      const tBtn = h("button", { class: "ghost", type: "button" }, showText ? "Text ausblenden" : "Text ansehen");
+      tBtn.addEventListener("click", () => { showText = !showText; renderPanel(); });
+      panel.append(
+        h("div", { class: "pstat" },
+          h("span", { class: "ready", text: `${state.pages} ${state.pages === 1 ? "Seite" : "Seiten"} bereit` }),
+          tBtn,
+          h("button", { class: "ghost", type: "button", onclick: () => file.click() }, "+ Fotos"),
+          h("button", { class: "ghost", type: "button", onclick: () => { if (confirm("¿Empezar con páginas nuevas? Se borra el texto actual.")) { state.text = ""; state.pages = 0; save(); results = 0; showText = false; renderPanel(); renderEmpty(); } } }, "Neu")),
+        ocr);
+    }
+    if (state.lastErr) panel.append(errBox(state.lastErr));
+    comp.setDisabled(!state.text);
+  }
+
+  async function transcribe(files) {
+    state.lastErr = null;
+    if (!cfg.key) { state.lastErr = { code: "no_key" }; renderPanel(); return; }
+    const prepared = [];
+    for (const f of files) {
+      try { prepared.push(await prepImage(f)); }
+      catch { toast(`No se pudo abrir «${f.name}». Prueba con JPG o PNG.`); }
+    }
+    if (!prepared.length) return;
+    const urls = prepared.map(p => p.url);
+    const max = 3;
+    const label = h("span");
+    const node = thinking(""); node.prepend(label);
+    const signal = comp.start();
+    try {
+      for (let i = 0; i < prepared.length; i += max) {
+        const batch = prepared.slice(i, i + max);
+        const a = state.pages + 1, b = state.pages + batch.length;
+        label.textContent = a === b ? `Lese Seite ${a}` : `Lese Seiten ${a}–${b}`;
+        renderPanel({ urls, node });
+        const res = await ask("text", OCR_PROMPT(a, batch.length), { images: batch, signal });
+        state.text = (state.text + "\n\n" + res.text.trim()).trim();
+        state.pages = b; save();
+      }
+    } catch (e) {
+      state.lastErr = e && e.code === "cancelled" ? null : e;
+    } finally {
+      comp.end(); renderPanel(); renderEmpty();
+      if (state.text && !state.lastErr) comp.ta.focus();
+    }
+  }
+
+  function lookup(q, forced) {
+    if (!results) feed.replaceChildren();
+    results++;
+    const body = h("div");
+    const turn = h("div", { class: "turn" }, h("div", { class: "qrow" }, h("div", { class: "qbubble de", text: forced ? `${q} (otra oración)` : q })), body);
+    feed.append(turn);
+    const run = async () => {
+      body.replaceChildren(thinking()); toEnd(feed);
+      const signal = comp.start();
+      try {
+        const d = await ask("json", LESE_PROMPT(state.text, q, forced), { signal });
+        body.replaceChildren(renderResult(d, q, !!forced)); toTop(feed, turn);
+      } catch (e) { body.replaceChildren(errBox(e, run)); toEnd(feed); }
+      finally { comp.end(); }
+    };
+    run();
+  }
+  function renderResult(d, q, forced) {
+    const w = h("div");
+    if (!d || d.found === false || !str(d.sentence)) {
+      w.append(h("p", { class: "line", text: `«${q}» no aparece en el texto.` }));
+      const sug = arr(d && d.suggestions).map(str).filter(Boolean);
+      if (sug.length) w.append(h("p", { class: "line muted small", text: "¿Quizás buscabas…?" }),
+        h("div", { class: "chips" }, sug.map(s => h("button", { class: "chip", type: "button", onclick: () => { if (!comp.busy) lookup(s); } }, s))));
+      return w;
+    }
+    const sent = str(d.sentence);
+    w.append(h("p", { class: "line" }, h("span", { class: "lbl" }, "Oración: "), h("span", { class: "de-text" }, sent), " ", sayBtn(sent)));
+    if (str(d.translation)) w.append(lineEl("Traducción:", str(d.translation)));
+    w.append(breakdownEl(d.breakdown));
+    if (str(d.function)) w.append(lineEl("Función:", str(d.function)));
+    const others = forced ? [] : arr(d.others).map(str).filter(o => o && o !== sent);
+    if (others.length) {
+      w.append(h("p", { class: "line muted small", style: "margin-top:12px", text: "También aparece en:" }),
+        h("div", { class: "others" }, others.map(o => h("button", { class: "other", type: "button", onclick: () => { if (!comp.busy) lookup(q, o); } }, o))));
+    }
+    return w;
+  }
+  renderPanel(); renderEmpty();
+}
+
+/* ---------- B: Satzdoktor ---------- */
+const normTok = t => t.replace(/^[»«„“"'(]+/, "").replace(/[.,!?;:»«„“"')]+$/, "");
+function diffWords(a, b) {
+  const A = a.split(/\s+/).filter(Boolean), B = b.split(/\s+/).filter(Boolean);
+  const n = A.length, m = B.length;
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    dp[i][j] = normTok(A[i]) === normTok(B[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const sa = new Array(n).fill(false), sb = new Array(m).fill(false);
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (normTok(A[i]) === normTok(B[j])) { sa[i] = sb[j] = true; i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) i++; else j++;
+  }
+  return { a: A.map((t, k) => ({ t, same: sa[k] })), b: B.map((t, k) => ({ t, same: sb[k] })) };
+}
+function diffEl(tokens, tag) {
+  const s = h("span");
+  tokens.forEach((tk, k) => { if (k) s.append(" "); s.append(tk.same ? tk.t : h(tag, { class: "x" }, tk.t)); });
+  return s;
+}
+function initSatz() {
+  const mod = MODS[1];
+  const { sec, feed } = buildScreen(mod, "Escribe una frase en alemán y te la corrijo.");
+  const comp = makeComposer(sec, { placeholder: "Schreib einen Satz auf Deutsch…", onSend: t => check(t), autocorrect: false });
+  let count = 0;
+  feed.append(emptyEl("Schreib einen Satz.", "Si está bien, te lo confirmo. Si no, te doy una versión natural."));
+  function check(t) {
+    if (!count) feed.replaceChildren();
+    count++;
+    const body = h("div");
+    const turn = h("div", { class: "turn" }, h("div", { class: "qrow" }, h("div", { class: "qbubble de", text: t })), body);
+    feed.append(turn);
+    const run = async () => {
+      body.replaceChildren(thinking()); toEnd(feed);
+      const signal = comp.start();
+      try { const d = await ask("json", SATZ_PROMPT(t), { signal }); body.replaceChildren(render(d, t)); toTop(feed, turn); }
+      catch (e) { body.replaceChildren(errBox(e, run)); toEnd(feed); }
+      finally { comp.end(); }
+    };
+    run();
+  }
+  function render(d, orig) {
+    const v = ["correct", "almost", "wrong"].includes(d && d.verdict) ? d.verdict : "almost";
+    const corr = str(d && d.corrected) || orig;
+    const w = h("div");
+    const labels = { correct: "Richtig!", almost: "Fast richtig", wrong: "Nicht ganz" };
+    w.append(h("div", { class: "verdict v-" + v }, h("span", { class: "dot" }), labels[v]));
+    let deNode = document.createTextNode(corr);
+    if (v === "almost") {
+      const df = diffWords(orig, corr);
+      w.append(h("p", { class: "line" }, h("span", { class: "lbl" }, "Tu frase: "), h("span", { class: "de-text" }, diffEl(df.a, "del"))));
+      deNode = diffEl(df.b, "ins");
+    }
+    if (v === "wrong") w.append(h("p", { class: "line lbl", text: "Seguro quisiste decir:" }));
+    w.append(h("div", { class: "pair" },
+      h("p", { class: "line" }, h("span", { class: "lbl" }, "Alemán: "), h("span", { class: "de-text" }, deNode), " ", sayBtn(corr)),
+      h("p", { class: "line" }, h("span", { class: "lbl" }, "Español: "), str(d && d.translation))));
+    const errs = v === "correct" ? [] : arr(d && d.errors).filter(e => e && (str(e.wrong) || str(e.right)));
+    if (errs.length) w.append(h("ul", { class: "errs" }, errs.map(e => h("li", null,
+      str(e.wrong) ? h("del", { class: "x" }, str(e.wrong)) : null, str(e.wrong) ? " → " : null,
+      h("ins", { class: "x" }, str(e.right)), str(e.why) ? h("span", { class: "func" }, ". " + noDot(str(e.why)) + ".") : null))));
+    if (str(d && d.tip)) w.append(h("p", { class: "tip" }, h("span", { class: "lbl" }, "Tipp: "), str(d.tip)));
+    return w;
+  }
+}
+
+/* ---------- C: Sag's auf Deutsch! ---------- */
+function initSag() {
+  const mod = MODS[2];
+  const { sec, feed } = buildScreen(mod, "Escribe en español y te digo cómo se dice en alemán.");
+  let reg = store.get("sag.reg", "auto");
+  const regBtns = [["auto", "Auto"], ["du", "du"], ["Sie", "Sie"]].map(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(reg === v) }, t);
+    b.addEventListener("click", () => { reg = v; store.set("sag.reg", v); regBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+    return b;
+  });
+  sec.append(h("div", { class: "strip" }, "Trato", h("div", { class: "seg", role: "group", "aria-label": "Trato" }, regBtns)));
+  const comp = makeComposer(sec, { placeholder: "¿Qué quieres decir en alemán?", onSend: t => translate(t) });
+  let count = 0;
+  feed.append(emptyEl("Was möchtest du sagen?", "Escríbelo en español: una frase, una pregunta, un mensaje."));
+  function translate(t) {
+    if (!count) feed.replaceChildren();
+    count++;
+    const body = h("div");
+    const turn = h("div", { class: "turn" }, h("div", { class: "qrow" }, h("div", { class: "qbubble", text: t })), body);
+    feed.append(turn);
+    const r = reg;
+    const run = async () => {
+      body.replaceChildren(thinking()); toEnd(feed);
+      const signal = comp.start();
+      try { const d = await ask("json", SAG_PROMPT(t, r), { signal }); body.replaceChildren(render(d)); toTop(feed, turn); }
+      catch (e) { body.replaceChildren(errBox(e, run)); toEnd(feed); }
+      finally { comp.end(); }
+    };
+    run();
+  }
+  function render(d) {
+    const w = h("div");
+    const de = str(d && d.german);
+    if (!de) { w.append(errBox({ code: "invalid_json" })); return w; }
+    w.append(h("p", { class: "line" }, h("span", { class: "de-big" }, de), " ", sayBtn(de)));
+    const alt = str(d.alt);
+    if (alt && alt.toLowerCase() !== "vacío" && alt !== de) w.append(h("p", { class: "line" }, h("span", { class: "lbl" }, "También: "), h("span", { class: "de-text" }, alt), " ", sayBtn(alt)));
+    w.append(breakdownEl(d.breakdown));
+    const note = str(d.note);
+    if (note && note.toLowerCase() !== "vacío") w.append(h("p", { class: "tip" }, h("span", { class: "lbl" }, "Nota: "), note));
+    return w;
+  }
+}
+
+/* ---------- D: Kaffeeklatsch ---------- */
+const NAMES = ["Lena", "Mia", "Hannah", "Emma", "Sophie", "Lea", "Marie", "Anna", "Clara", "Johanna", "Leonie", "Paula", "Greta", "Ida", "Frieda", "Mila", "Jana", "Katharina", "Luisa", "Nele", "Antonia", "Charlotte", "Julia", "Theresa", "Franziska", "Svenja", "Miriam", "Carla", "Lotte", "Merle", "Valentina", "Magdalena"];
+const CITIES = ["Wien", "Graz", "Salzburg", "Innsbruck", "Linz", "Klagenfurt", "München", "Berlin", "Hamburg", "Köln", "Leipzig", "Dresden", "Freiburg", "Heidelberg", "Bremen", "Zürich", "Bern"];
+const TOPICS = ["Freies Thema", "Alltag", "Uni & Studium", "Reisen", "Essen & Kochen", "Hobbys & Freizeit", "Arbeit & Technik", "Kultur & Filme"];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+function initKaffee() {
+  const mod = MODS[3];
+  const { sec, feed, tools, subP } = buildScreen(mod, "Conversa en alemán con correcciones breves.");
+  const kk = { name: "", city: "", age: 0, topic: "Freies Thema", msgs: [], started: false };
+  let auto = store.get("kk.auto", false);
+  const autoBtn = h("button", { class: "pill", type: "button", "aria-pressed": String(auto), title: "Leer en voz alta sus respuestas" }, "Vorlesen");
+  autoBtn.addEventListener("click", () => { auto = !auto; store.set("kk.auto", auto); autoBtn.setAttribute("aria-pressed", String(auto)); });
+  const newBtn = h("button", { class: "pill", type: "button", hidden: true, onclick: () => renderStart() }, "Neu");
+  tools.append(autoBtn, newBtn);
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let mic = null, rec = null;
+  if (SR) { mic = h("button", { class: "mic", type: "button", "aria-label": "Diktieren", title: "Diktieren (Deutsch)" }); mic.innerHTML = ICON.mic; }
+  const comp = makeComposer(sec, { placeholder: "Deine Antwort…", onSend: t => send(t), before: mic, autocorrect: false });
+  if (mic) mic.addEventListener("click", () => {
+    if (rec) { rec.stop(); return; }
+    try {
+      rec = new SR(); rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false;
+      const base = comp.ta.value.trim() ? comp.ta.value.trim() + " " : "";
+      rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; comp.ta.value = base + t; comp.ta.dispatchEvent(new Event("input")); };
+      rec.onerror = e => {
+        if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) {
+          mic.hidden = true; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán.");
+        }
+      };
+      rec.onend = () => { mic.classList.remove("rec"); rec = null; };
+      rec.start(); mic.classList.add("rec");
+    } catch { mic.hidden = true; rec = null; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán."); }
+  });
+
+  function prompt() {
+    const u = userName();
+    const opening = kk.msgs.length === 0;
+    const tr = kk.msgs.slice(-30).map(m => `${m.who === "her" ? kk.name : u}: ${m.text}`).join("\n");
+    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Eres simpática, curiosa y natural. Chateas con ${u}, un estudiante latinoamericano que practica alemán (nivel B1). Tema: ${kk.topic === "Freies Thema" ? "libre, lo que surja" : kk.topic}.
+
+Reglas:
+- Escribe SIEMPRE en alemán natural y sencillo (nivel B1): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga.
+- Mantén tu personaje y recuerda lo que ya se dijo. No digas que eres una IA.
+${opening
+  ? `- Empieza tú la conversación: saluda a ${u} por su nombre, preséntate en pocas palabras y haz una pregunta sobre el tema. No uses la frase «Wie geht's?». "fix" es null.`
+  : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación y detalles mínimos). Si está bien, "fix" es null. No menciones la corrección en "reply": sigue la conversación con naturalidad.
+
+Conversación hasta ahora:
+${tr}`}
+
+Responde SOLO con JSON:
+{"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"}, "reply": "tu respuesta en alemán", "es": "traducción al español de tu respuesta"}`;
+  }
+
+  function herEl(m) {
+    const tr = h("div", { class: "tr", hidden: true, text: m.es || "" });
+    const tBtn = m.es ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
+    if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
+    const sb = sayBtn(m.text);
+    const node = h("div", { class: "msg her" }, h("div", { class: "who", text: kk.name }), h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
+    if (auto) setTimeout(() => speak(m.text, sb), 150);
+    return node;
+  }
+  function meEl(m) { return h("div", { class: "msg me" }, h("div", { class: "bubble", text: m.text })); }
+
+  function renderStart() {
+    if (rec) rec.stop();
+    comp.abort();
+    kk.started = false; kk.msgs = []; newBtn.hidden = true;
+    subP.textContent = "Conversa en alemán con correcciones breves.";
+    const chips = TOPICS.map(t => {
+      const b = h("button", { class: "chip", type: "button", "aria-pressed": String(kk.topic === t) }, t);
+      b.addEventListener("click", () => { kk.topic = t; chips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+      return b;
+    });
+    feed.replaceChildren(h("div", { class: "start" },
+      h("p", { class: "big", text: "Worüber möchtest du plaudern?" }),
+      h("p", { class: "muted small", style: "margin:0 0 14px", text: "Elige un tema. En cada sesión conoces a alguien nuevo." }),
+      h("div", { class: "chips" }, chips),
+      h("button", { class: "primary", type: "button", onclick: begin }, "Gespräch beginnen")));
+    comp.setDisabled(true);
+  }
+  function begin() {
+    const last = store.get("kk.last", "");
+    let n; do { n = pick(NAMES); } while (n === last && NAMES.length > 1);
+    store.set("kk.last", n);
+    Object.assign(kk, { name: n, city: pick(CITIES), age: 21 + Math.floor(Math.random() * 10), msgs: [], started: true });
+    subP.textContent = `Du plauderst mit ${kk.name} (${kk.age}) aus ${kk.city}.`;
+    newBtn.hidden = false;
+    feed.replaceChildren();
+    reply();
+  }
+  function send(t) {
+    if (!kk.started) return;
+    const m = { who: "me", text: t };
+    m.node = meEl(m); kk.msgs.push(m); feed.append(m.node);
+    reply();
+  }
+  async function reply() {
+    const slot = h("div", { class: "msg her" }, thinking(kk.msgs.length ? `${kk.name} schreibt` : `${kk.name} kommt dazu`));
+    feed.append(slot); toEnd(feed);
+    comp.setDisabled(false);
+    const signal = comp.start();
+    const session = kk;
+    const n = kk.msgs.length;
+    try {
+      const d = await ask("json", prompt(), { signal, modelTier: "quick" });
+      if (session !== kk || n !== kk.msgs.length || !kk.started) { slot.remove(); return; }
+      const lastMe = [...kk.msgs].reverse().find(m => m.who === "me");
+      if (lastMe && d && d.fix && str(d.fix.better) && str(d.fix.better) !== lastMe.text) {
+        lastMe.node.append(h("div", { class: "fix" }, h("span", { class: "better", text: "Besser: " + str(d.fix.better) }), str(d.fix.why) ? h("span", { class: "why", text: str(d.fix.why) }) : null));
+      }
+      const text = str(d && d.reply);
+      if (!text) throw { code: "empty_completion" };
+      const m = { who: "her", text, es: str(d.es) };
+      kk.msgs.push(m);
+      slot.replaceWith(herEl(m));
+    } catch (e) {
+      slot.replaceChildren(errBox(e, () => { slot.remove(); reply(); }));
+    } finally {
+      comp.end(); toEnd(feed);
+      if (kk.started) comp.ta.focus({ preventScroll: true });
+    }
+  }
+  renderStart();
+}
+
+/* ---------- boot ---------- */
+initHome(); initLese(); initSatz(); initSag(); initKaffee();
+show(route());
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
