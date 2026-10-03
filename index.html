@@ -74,7 +74,11 @@ button:disabled{cursor:default}
 .field.stack{display:grid;gap:6px;justify-content:stretch}
 .field.stack input{width:100%}
 .keyrow{display:flex;gap:6px}
-.keyrow input{flex:1}
+.keyrow input,.keyrow select{flex:1;min-width:0}
+.vsel{border:1px solid var(--line);border-radius:999px;padding:7px 12px;font:inherit;font-size:16px;background:var(--paper);color:var(--ink)}
+.say.loading,.ghost.loading{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.say.loading,.ghost.loading{animation:none;opacity:.5}}
 .status{font-size:14px;margin:0}
 .status.ok{color:var(--ok)} .status.bad{color:var(--bad)}
 .settings h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0}
@@ -215,7 +219,10 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("doichi." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("doichi." + k, JSON.stringify(v)); } catch {} }
 };
-const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false) };
+const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false), level: store.get("level", "B1") };
+const LEVELS = ["A2", "B1", "B2"];
+const lvl = () => LEVELS.includes(settings.level) ? settings.level : "B1";
+const lvlUp = () => ({ A2: "B1", B1: "B2", B2: "C1" })[lvl()];
 const userName = () => (settings.name || "").trim() || "Axel";
 
 const ICON = {
@@ -243,24 +250,166 @@ const toEnd = feed => requestAnimationFrame(() => { feed.scrollTop = feed.scroll
 const toTop = (feed, node) => requestAnimationFrame(() => { feed.scrollTop = Math.max(0, node.offsetTop - feed.offsetTop - 8); });
 
 /* ---------- speech ---------- */
+// Natural voices come from Gemini's text-to-speech models; the device voice is the free, offline fallback.
+const GEMINI_VOICES = [
+  ["Kore", "Kore (weiblich, klar)"], ["Aoede", "Aoede (weiblich, locker)"], ["Leda", "Leda (weiblich, jung)"],
+  ["Sulafat", "Sulafat (weiblich, warm)"], ["Charon", "Charon (männlich, ruhig)"], ["Iapetus", "Iapetus (männlich, klar)"],
+  ["Puck", "Puck (männlich, fröhlich)"]
+];
+settings.voice = store.get("voice", "g:Kore");
+let deVoices = [];
 let deVoice = null;
 function pickVoice() {
   const vs = speechSynthesis.getVoices();
-  deVoice = vs.find(v => /^de[-_]DE/i.test(v.lang) && /google|natural|premium|enhanced|neural/i.test(v.name))
-    || vs.find(v => /^de[-_]DE/i.test(v.lang)) || vs.find(v => /^de/i.test(v.lang)) || null;
+  deVoices = vs.filter(v => /^de/i.test(v.lang));
+  const chosen = settings.voice.startsWith("d:") ? deVoices.find(v => v.voiceURI === settings.voice.slice(2)) : null;
+  deVoice = chosen
+    || deVoices.find(v => /^de[-_]DE/i.test(v.lang) && /google|natural|premium|enhanced|neural|siri/i.test(v.name + " " + v.voiceURI))
+    || deVoices.find(v => /^de[-_]DE/i.test(v.lang)) || deVoices[0] || null;
+  document.dispatchEvent(new Event("doichi-voices"));
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-function speak(text, btn) {
-  if (!("speechSynthesis" in window)) { toast("Este navegador no puede reproducir audio."); return; }
-  const wasPlaying = btn && btn.classList.contains("playing");
-  speechSynthesis.cancel();
-  document.querySelectorAll(".playing").forEach(b => b.classList.remove("playing"));
-  if (wasPlaying || !text) return;
+
+// One shared <audio> element, unlocked by the first tap, so iPhone allows later playback (and plays even in silent mode).
+const player = new Audio();
+player.preload = "auto";
+const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+let unlocked = false;
+function unlockPlayer() {
+  if (actx && actx.state !== "running") actx.resume().catch(() => {});
+  if (unlocked) return;
+  audioCtx();
+  unlocked = true;
+  try { player.src = SILENT_WAV; const pr = player.play(); if (pr) pr.catch(() => { unlocked = false; }); } catch { unlocked = false; }
+}
+document.addEventListener("touchend", unlockPlayer, { capture: true, passive: true });
+document.addEventListener("click", unlockPlayer, { capture: true });
+
+let actx = null;
+function audioCtx() {
+  if (!actx) {
+    const C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    try { actx = new C(); } catch { return null; }
+    // iPhone: play even with the silent switch on (Safari 17+)
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+  }
+  if (actx.state === "suspended") actx.resume().catch(() => {});
+  return actx;
+}
+
+let speakToken = 0, ttsCooldownUntil = 0, ttsNotice = false, streamUnsupported = false;
+let liveSources = [], liveCtl = null;
+function stopAudio() {
+  speakToken++;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  try { player.pause(); } catch {}
+  if (liveCtl) { try { liveCtl.abort(); } catch {} liveCtl = null; }
+  for (const src of liveSources) { try { src.onended = null; src.stop(); } catch {} }
+  liveSources = [];
+  document.querySelectorAll(".playing,.loading").forEach(b => b.classList.remove("playing", "loading"));
+}
+function deviceSpeak(text, btn) {
+  if (!("speechSynthesis" in window)) { toast("Este dispositivo no puede reproducir audio."); return; }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE"; if (deVoice) u.voice = deVoice;
   u.rate = settings.slow ? 0.72 : 0.95;
   if (btn) { btn.classList.add("playing"); const off = () => btn.classList.remove("playing"); u.onend = off; u.onerror = off; }
   setTimeout(() => speechSynthesis.speak(u), 60);
+}
+const audioUrls = new Map();
+function playBlob(key, blob, btn, text) {
+  let url = audioUrls.get(key);
+  if (!url) { url = URL.createObjectURL(blob); audioUrls.set(key, url); }
+  player.src = url;
+  const rate = settings.slow ? 0.8 : 1;
+  try { player.preservesPitch = true; player.webkitPreservesPitch = true; } catch {}
+  player.defaultPlaybackRate = rate; player.playbackRate = rate;
+  if (btn) { btn.classList.add("playing"); player.onended = player.onerror = () => btn.classList.remove("playing"); }
+  const pr = player.play();
+  if (pr) pr.then(() => { player.playbackRate = rate; }).catch(() => { if (btn) btn.classList.remove("playing"); deviceSpeak(text, btn); });
+}
+const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && Date.now() > ttsCooldownUntil;
+const ttsKey = text => `${cfg.gemini.tts}|${settings.voice.slice(2)}|${text}`;
+const pendingAudio = new Map();
+
+async function speak(text, btn) {
+  const wasActive = btn && (btn.classList.contains("playing") || btn.classList.contains("loading"));
+  stopAudio();
+  if (wasActive || !text) return;
+  const token = speakToken;
+  if (!naturalOn()) { deviceSpeak(text, btn); return; }
+  unlockPlayer();
+  const key = ttsKey(text);
+  try {
+    let blob = await idbGet(key);
+    if (!blob && pendingAudio.has(key)) {
+      if (btn) btn.classList.add("loading");
+      blob = await withTimeout(pendingAudio.get(key), 20000);
+    }
+    if (token !== speakToken) return;
+    if (blob) { if (btn) btn.classList.remove("loading"); playBlob(key, blob, btn, text); return; }
+    if (btn) btn.classList.add("loading");
+    const ctl = new AbortController(); liveCtl = ctl;
+    const timer = setTimeout(() => { ctl.timedOut = true; ctl.abort(); }, 20000);
+    let started = false;
+    const onStart = () => { started = true; clearTimeout(timer); if (btn) { btn.classList.remove("loading"); btn.classList.add("playing"); } };
+    try {
+      // Normal speed: stream and start playing as soon as the first audio arrives.
+      // Slow speed: download fully, then play at 0.8x with natural pitch.
+      if (!settings.slow && !streamUnsupported && audioCtx()) {
+        try { blob = await streamTTS(text, ctl.signal, token, onStart, btn); }
+        catch (e) {
+          if (e && e.code === "bad_request" && !started) { streamUnsupported = true; blob = null; }
+          else throw e;
+        }
+        if (!blob && streamUnsupported && token === speakToken) {
+          blob = await fetchTTS(text, ctl.signal);
+          if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
+        }
+      } else {
+        blob = await fetchTTS(text, ctl.signal);
+        if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
+      }
+    } finally { clearTimeout(timer); if (liveCtl === ctl) liveCtl = null; }
+    if (blob) idbPut(key, blob);
+    if (token === speakToken && !started) throw { code: ctl.timedOut ? "timeout" : "empty_completion" };
+    return;
+  } catch (e) {
+    if (token !== speakToken && !(e && e.code === "timeout")) return;
+    if (btn) btn.classList.remove("loading", "playing");
+    if (e && e.code === "cancelled" && token !== speakToken) return;
+    if (e && e.code === "rate_limited") {
+      ttsCooldownUntil = Date.now() + 5 * 60 * 1000;
+      toast("Límite de la voz natural alcanzado. Uso la voz del dispositivo por ahora.");
+    } else if (e && (e.code === "timeout" || (e.code === "cancelled"))) {
+      toast("La voz natural tarda demasiado. Uso la voz del dispositivo.");
+    } else if (!ttsNotice) {
+      ttsNotice = true;
+      toast("La voz natural no respondió. Uso la voz del dispositivo." + (e && e.code === "model_not_found" ? " Revisa el «Sprachmodell» en Einstellungen." : ""));
+    }
+    stopAudio();
+    deviceSpeak(text, btn);
+  }
+}
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), ms))]);
+}
+// Generate the main sentence's audio in the background, so the first tap plays instantly.
+function prefetchSpeech(text) {
+  if (!text || !naturalOn()) return;
+  const key = ttsKey(text);
+  if (pendingAudio.has(key)) return;
+  const job = (async () => {
+    const have = await idbGet(key);
+    if (have) return have;
+    const blob = await fetchTTS(text);
+    idbPut(key, blob);
+    return blob;
+  })();
+  pendingAudio.set(key, job);
+  job.catch(e => { if (e && e.code === "rate_limited") ttsCooldownUntil = Date.now() + 5 * 60 * 1000; })
+     .finally(() => setTimeout(() => pendingAudio.delete(key), 1000));
 }
 function sayBtn(text) {
   const b = h("button", { class: "say", type: "button", "aria-label": "Anhören", title: "Anhören" });
@@ -268,13 +417,130 @@ function sayBtn(text) {
   return b;
 }
 
-/* ---------- Gemini ---------- */
-const API = "https://generativelanguage.googleapis.com/v1beta";
-const cfg = {
-  key: store.get("gm.key", ""),
-  model: store.get("gm.model", "gemini-flash-latest"),
-  fast: store.get("gm.fast", "gemini-3.5-flash-lite")
+/* natural-voice audio: Gemini TTS, cached in IndexedDB so repeated sentences cost nothing */
+let ttsDbP = null;
+function ttsDb() {
+  if (!ttsDbP) ttsDbP = new Promise((res, rej) => {
+    const r = indexedDB.open("doichi-tts", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("a");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  return ttsDbP;
+}
+async function idbGet(k) {
+  try { const d = await ttsDb(); return await new Promise(res => { const q = d.transaction("a").objectStore("a").get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+  catch { return null; }
+}
+async function idbPut(k, v) {
+  try {
+    const d = await ttsDb();
+    d.transaction("a", "readwrite").objectStore("a").put(v, k);
+    const order = store.get("tts.keys", []).filter(x => x !== k); order.push(k);
+    while (order.length > 150) { const old = order.shift(); d.transaction("a", "readwrite").objectStore("a").delete(old); }
+    store.set("tts.keys", order);
+  } catch {}
+}
+function pcmToWav(bytes, rate) {
+  const buf = new ArrayBuffer(44 + bytes.length), v = new DataView(buf);
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + bytes.length, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, bytes.length, true);
+  new Uint8Array(buf, 44).set(bytes);
+  return buf;
+}
+const b64bytes = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+function concatBytes(arrs) { let n = 0; for (const a of arrs) n += a.length; const o = new Uint8Array(n); let i = 0; for (const a of arrs) { o.set(a, i); i += a.length; } return o; }
+function audioParts(obj) {
+  const parts = (obj && obj.candidates && obj.candidates[0] && obj.candidates[0].content && obj.candidates[0].content.parts) || [];
+  const chunks = []; let rate = 0;
+  for (const p of parts) {
+    const inl = p.inlineData || p.inline_data;
+    if (!inl || !inl.data) continue;
+    const m = String(inl.mimeType || inl.mime_type || "").match(/rate=(\d+)/);
+    if (m) rate = +m[1];
+    chunks.push(b64bytes(inl.data));
+  }
+  return { chunks, rate };
+}
+// Only the German text is sent: no instructions, so the voice starts directly with the sentence.
+const ttsBody = text => ({ contents: [{ parts: [{ text }] }],
+  generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: settings.voice.slice(2) } } } } });
+async function fetchTTS(text, signal) {
+  const g = cfg.gemini;
+  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text), signal);
+  const { chunks, rate } = audioParts(data);
+  if (!chunks.length) throw { code: "empty_completion" };
+  return new Blob([pcmToWav(concatBytes(chunks), rate || 24000)], { type: "audio/wav" });
+}
+async function streamTTS(text, signal, token, onStart, btn) {
+  const g = cfg.gemini, ctx = audioCtx();
+  let res;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:streamGenerateContent?alt=sse`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(ttsBody(text)), signal });
+  } catch (e) { throw { code: signal && signal.aborted ? "cancelled" : "network" }; }
+  if (!res.ok || !res.body) {
+    let d = null; try { d = await res.json(); } catch {}
+    const er = (d && (d.error || (Array.isArray(d) && d[0] && d[0].error))) || {};
+    throw httpError(res.status, er.message, er.status);
+  }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  const all = []; let rate = 24000, buf = "", t = 0, leftover = null, last = null;
+  const sources = liveSources;
+  const schedule = bytes => {
+    if (token !== speakToken) return;
+    if (leftover) { bytes = concatBytes([leftover, bytes]); leftover = null; }
+    if (bytes.length % 2) { leftover = bytes.slice(-1); bytes = bytes.slice(0, -1); }
+    const n = bytes.length / 2; if (!n) return;
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
+    const ab = ctx.createBuffer(1, n, rate), ch = ab.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = dv.getInt16(i * 2, true) / 32768;
+    const src = ctx.createBufferSource(); src.buffer = ab; src.connect(ctx.destination);
+    const now = ctx.currentTime; if (t < now + 0.05) t = now + 0.1;
+    src.start(t); t += ab.duration; sources.push(src); last = src;
+    if (sources.length === 1) onStart();
+  };
+  const handleEvent = ev => {
+    const data = ev.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trim()).join("");
+    if (!data || data === "[DONE]") return;
+    let obj; try { obj = JSON.parse(data); } catch { return; }
+    if (obj.error) throw httpError(obj.error.code || 0, obj.error.message, obj.error.status);
+    const p = audioParts(obj);
+    if (p.rate) rate = p.rate;
+    for (const c of p.chunks) { all.push(c); schedule(c); }
+  };
+  for (;;) {
+    let r;
+    try { r = await reader.read(); } catch { throw { code: signal && signal.aborted ? "cancelled" : "network" }; }
+    if (r.done) break;
+    buf += dec.decode(r.value, { stream: true }).replace(/\r/g, "");
+    let i;
+    while ((i = buf.indexOf("\n\n")) >= 0) { handleEvent(buf.slice(0, i)); buf = buf.slice(i + 2); }
+  }
+  if (buf.trim()) handleEvent(buf);
+  if (!all.length) throw { code: "empty_completion" };
+  if (last && btn) last.onended = () => { if (token === speakToken) btn.classList.remove("playing"); };
+  return new Blob([pcmToWav(concatBytes(all), rate)], { type: "audio/wav" });
+}
+
+/* ---------- AI providers (Gemini / ChatGPT) ---------- */
+const PROVIDERS = {
+  gemini: { label: "Gemini", keyHint: "AIza…", keyUrl: "https://aistudio.google.com/apikey", keyUrlText: "aistudio.google.com/apikey",
+    note: "Gratis (con límites diarios).", defModel: "gemini-flash-latest", defFast: "gemini-3.5-flash-lite" },
+  openai: { label: "ChatGPT", keyHint: "sk-…", keyUrl: "https://platform.openai.com/api-keys", keyUrlText: "platform.openai.com/api-keys",
+    note: "De pago por uso: necesitas saldo en platform.openai.com (Billing).", defModel: "gpt-6.1-sol", defFast: "gpt-6-luna" }
 };
+const PFX = { gemini: "gm", openai: "oa" };
+const cfg = { provider: store.get("prov", "gemini") === "openai" ? "openai" : "gemini" };
+for (const id of Object.keys(PROVIDERS)) {
+  cfg[id] = { key: store.get(PFX[id] + ".key", ""), model: store.get(PFX[id] + ".model", PROVIDERS[id].defModel), fast: store.get(PFX[id] + ".fast", PROVIDERS[id].defFast) };
+}
+cfg.gemini.tts = store.get("gm.tts", "gemini-3.8-flash-lite-tts");
+const cur = () => cfg[cfg.provider];
+const saveCfg = id => { store.set("prov", cfg.provider); for (const k of ["key", "model", "fast"]) store.set(PFX[id] + "." + k, cfg[id][k]); };
+
 function parseJSON(t) {
   try { return JSON.parse(t); } catch {}
   const f = t.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -283,72 +549,118 @@ function parseJSON(t) {
   if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
   return undefined;
 }
-function httpError(status, msg) {
-  const m = msg || "";
+function httpError(status, msg, code) {
+  const m = msg || "", c = code || "";
+  if (c === "insufficient_quota" || /insufficient_quota|exceeded your current quota|billing/i.test(m)) return { code: "no_credit", message: m };
+  if (/unsupported_country|location|region|country/i.test(c + " " + m)) return { code: "region", message: m };
   if (status === 429) return { code: "rate_limited", message: m };
-  if (status === 404) return { code: "model_not_found", message: m };
+  if (status === 404 || c === "model_not_found" || /model .*(does not exist|not found)|do not have access to the model/i.test(m)) return { code: "model_not_found", message: m };
   if (status === 401 || status === 403 || /api[ _]?key/i.test(m)) return { code: "bad_key", message: m };
-  if (/location|region|country/i.test(m)) return { code: "region", message: m };
   if (status >= 500) return { code: "upstream_error", message: m };
   return { code: "bad_request", message: m };
 }
-async function ask(kind, prompt, opts = {}) {
-  if (!cfg.key) throw { code: "no_key" };
-  const model = opts.modelTier === "quick" ? cfg.fast : cfg.model;
+async function post(url, headers, body, signal) {
+  let res;
+  try { res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body), signal }); }
+  catch (e) {
+    if ((signal && signal.aborted) || (e && e.name === "AbortError")) throw { code: "cancelled" };
+    throw { code: "network" };
+  }
+  let data = null;
+  try { data = await res.json(); } catch { if (signal && signal.aborted) throw { code: "cancelled" }; }
+  if (!res.ok) { const er = (data && data.error) || {}; throw httpError(res.status, er.message, er.code || er.status); }
+  return data;
+}
+async function callGemini(c, model, kind, prompt, opts) {
   const parts = [{ text: prompt }];
   for (const img of opts.images || []) parts.push({ inline_data: { mime_type: img.mime, data: img.data } });
   const body = { contents: [{ role: "user", parts }], generationConfig: { temperature: kind === "json" ? 0.4 : 0.1 } };
   if (kind === "json") body.generationConfig.responseMimeType = "application/json";
-  let res;
-  try {
-    res = await fetch(`${API}/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": cfg.key },
-      body: JSON.stringify(body),
-      signal: opts.signal
-    });
-  } catch (e) {
-    if ((opts.signal && opts.signal.aborted) || (e && e.name === "AbortError")) throw { code: "cancelled" };
-    throw { code: "network" };
-  }
-  let data = null;
-  try { data = await res.json(); } catch { if (opts.signal && opts.signal.aborted) throw { code: "cancelled" }; }
-  if (!res.ok) throw httpError(res.status, data && data.error && data.error.message);
+  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { "x-goog-api-key": c.key }, body, opts.signal);
   const cand = data && data.candidates && data.candidates[0];
   if (!cand) throw { code: data && data.promptFeedback && data.promptFeedback.blockReason ? "refused" : "empty_completion" };
   const text = ((cand.content && cand.content.parts) || []).filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("").trim();
   if (!text) throw { code: /SAFETY|BLOCK|PROHIBITED/.test(cand.finishReason || "") ? "refused" : "empty_completion" };
-  if (kind !== "json") return { text, truncated: cand.finishReason === "MAX_TOKENS" };
-  const parsed = parseJSON(text);
+  return { text, truncated: cand.finishReason === "MAX_TOKENS" };
+}
+async function callOpenAI(c, model, kind, prompt, opts) {
+  const content = [{ type: "input_text", text: prompt }];
+  for (const img of opts.images || []) content.push({ type: "input_image", image_url: `data:${img.mime};base64,${img.data}` });
+  const body = { model, input: [{ role: "user", content }] };
+  if (kind === "json") body.text = { format: { type: "json_object" } };
+  const data = await post("https://api.openai.com/v1/responses", { "Authorization": "Bearer " + c.key }, body, opts.signal);
+  let text = typeof data.output_text === "string" ? data.output_text : "";
+  let refused = false;
+  if (!text) {
+    for (const item of data.output || []) {
+      if (item.type !== "message") continue;
+      for (const part of item.content || []) {
+        if (part.type === "output_text" && typeof part.text === "string") text += part.text;
+        if (part.type === "refusal") refused = true;
+      }
+    }
+  }
+  text = text.trim();
+  const why = data.incomplete_details && data.incomplete_details.reason;
+  if (!text) throw { code: refused || why === "content_filter" ? "refused" : "empty_completion" };
+  return { text, truncated: data.status === "incomplete" && why === "max_output_tokens" };
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function ask(kind, prompt, opts = {}) {
+  const c = cur();
+  if (!c.key) throw { code: "no_key" };
+  const call = cfg.provider === "openai" ? callOpenAI : callGemini;
+  const first = opts.modelTier === "quick" ? c.fast : c.model;
+  let out;
+  try { out = await call(c, first, kind, prompt, opts); }
+  catch (e) {
+    // Overloaded or transient: wait a moment, then retry once with the other model.
+    if (!e || e.code !== "upstream_error") throw e;
+    await sleep(2500);
+    if (opts.signal && opts.signal.aborted) throw { code: "cancelled" };
+    out = await call(c, first === c.model ? c.fast : c.model, kind, prompt, opts);
+  }
+  if (kind !== "json") return out;
+  const parsed = parseJSON(out.text);
   if (parsed === undefined) throw { code: "invalid_json" };
   return parsed;
 }
-async function listModels(key) {
+async function getJSON(url, headers) {
   let res;
-  try { res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": key } }); }
-  catch { throw { code: "network" }; }
+  try { res = await fetch(url, { headers }); } catch { throw { code: "network" }; }
   let data = null; try { data = await res.json(); } catch {}
-  if (!res.ok) throw httpError(res.status, data && data.error && data.error.message);
+  if (!res.ok) { const er = (data && data.error) || {}; throw httpError(res.status, er.message, er.code || er.status); }
+  return data || {};
+}
+async function listModels(provider, key) {
+  if (provider === "openai") {
+    const data = await getJSON("https://api.openai.com/v1/models", { "Authorization": "Bearer " + key });
+    return (data.data || []).map(m => String(m.id || ""))
+      .filter(n => /^(gpt|o\d|chatgpt)/.test(n) && !/audio|realtime|tts|transcribe|image|embedding|search|moderation|instruct|codex/.test(n))
+      .sort();
+  }
+  const data = await getJSON("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { "x-goog-api-key": key });
   return (data.models || [])
     .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
     .map(m => String(m.name || "").replace(/^models\//, ""))
     .filter(n => /^gemini/.test(n) && !/tts|image|live|embedding|transcribe|robotics|audio/.test(n));
 }
 const ERR_COPY = {
-  no_key: "Falta tu clave de Gemini. Pégala en Einstellungen (pantalla de inicio).",
-  bad_key: "Gemini rechazó la clave. Revisa que esté bien copiada en Einstellungen.",
+  no_key: "Falta tu clave de API. Pégala en Einstellungen (pantalla de inicio).",
+  bad_key: "La clave fue rechazada. Revisa que esté bien copiada y que corresponda al proveedor elegido.",
+  no_credit: "Tu cuenta de OpenAI no tiene saldo. Añade crédito en platform.openai.com → Billing.",
   model_not_found: "Ese modelo no existe o tu clave no tiene acceso. Elige otro en Einstellungen.",
-  region: "Gemini no está disponible desde tu ubicación con esta clave.",
-  rate_limited: "Límite del plan gratuito alcanzado. Espera un minuto; si persiste, el límite diario se reinicia mañana.",
-  network: "Sin conexión con Gemini. Revisa tu internet.",
-  upstream_error: "Gemini está saturado ahora mismo. Pulsa «Nochmal» en un momento.",
-  bad_request: "Gemini no pudo procesar esta consulta.",
-  refused: "Gemini no respondió a esta consulta. Prueba con otra frase.",
+  region: "El servicio no está disponible desde tu ubicación con esta clave.",
+  rate_limited: "Límite de uso alcanzado. Espera un minuto y vuelve a intentarlo.",
+  network: "Sin conexión. Revisa tu internet.",
+  upstream_error: "El servicio está saturado ahora mismo. Pulsa «Nochmal» en un momento.",
+  bad_request: "No se pudo procesar esta consulta.",
+  refused: "No hubo respuesta para esta consulta. Prueba con otra frase.",
   invalid_json: "La respuesta llegó con formato incorrecto. Pulsa «Nochmal».",
   empty_completion: "Llegó una respuesta vacía. Pulsa «Nochmal»."
 };
-const FATAL = new Set(["no_key", "bad_key", "model_not_found", "region"]);
-const errText = e => ERR_COPY[e && e.code] || "No se pudo conectar con Gemini. Pulsa «Nochmal».";
+const FATAL = new Set(["no_key", "bad_key", "no_credit", "model_not_found", "region"]);
+const errText = e => ERR_COPY[e && e.code] || "No se pudo conectar. Pulsa «Nochmal».";
 const openSettings = () => { location.hash = "home"; setTimeout(() => { const k = $("#gk"); if (k) { k.scrollIntoView({ block: "center" }); k.focus(); } }, 80); };
 function errBox(e, retry) {
   if (e && e.code === "cancelled") return h("div", { class: "muted small", text: "Abgebrochen." });
@@ -372,7 +684,7 @@ Transcribe el texto alemán exactamente como aparece: misma ortografía, mayúsc
 Responde solo con la transcripción, sin comentarios.`;
 
 function LESE_PROMPT(text, q, forced) {
-  return `Eres un profesor de alemán muy preciso. Tu alumno es hispanohablante (nivel B1) y está leyendo este libro:
+  return `Eres un profesor de alemán muy preciso. Tu alumno es hispanohablante (nivel ${lvl()}) y está leyendo este libro:
 
 <texto>
 ${text}
@@ -397,7 +709,7 @@ Reglas:
 - "es" y "func" muy breves (máx. 15 palabras cada uno). Precisión ante todo; si algo es ambiguo, dilo.${forced ? '\n- "others": [].' : ""}`;
 }
 
-const SATZ_PROMPT = t => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel B1) escribió esta frase en alemán:
+const SATZ_PROMPT = t => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel ${lvl()}) escribió esta frase en alemán:
 
 «${t}»
 
@@ -410,13 +722,13 @@ Evalúala. Responde SOLO con JSON:
 
 Criterios:
 - "correct": gramaticalmente correcta y natural. Las variantes de estilo no son errores; ignora si falta el punto final. corrected = la frase original tal cual; errors = [].
-- "almost": se entiende, pero tiene errores o suena poco natural. corrected = una versión natural de nivel aproximado B2 que mantiene lo que quería decir.
+- "almost": se entiende, pero tiene errores o suena poco natural. corrected = una versión natural de nivel aproximado ${lvlUp()} que mantiene lo que quería decir.
 - "wrong": muy incorrecta o difícil de entender. corrected = lo que seguramente quiso decir, en alemán simple y natural.
 - translation = traducción al español natural y en contexto de "corrected".
 - errors: como máximo 4, los más importantes.
 - tip: un consejo breve en español solo si de verdad ayuda; si no, "".`;
 
-const SAG_PROMPT = (t, reg) => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel B1) quiere decir esto en alemán:
+const SAG_PROMPT = (t, reg) => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel ${lvl()}) quiere decir esto en alemán:
 
 «${t}»
 
@@ -441,7 +753,7 @@ const SCREENS = ["home", ...MODS.map(m => m.id)];
 const route = () => { const r = location.hash.slice(1); return SCREENS.includes(r) ? r : "home"; };
 function show(id) {
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  stopAudio();
 }
 window.addEventListener("hashchange", () => show(route()));
 const goHome = () => { location.hash = "home"; };
@@ -503,8 +815,8 @@ function initHome() {
   const hello = h("p", { class: "hello" });
   const renderHello = () => hello.replaceChildren("Hallo, ", h("b", { text: userName() }), ". Was übst du heute?");
   renderHello();
-  const banner = h("p", { class: "banner", hidden: !!cfg.key },
-    "Primer paso: crea tu clave gratis de Gemini y pégala abajo en Einstellungen. ",
+  const banner = h("p", { class: "banner", hidden: !!cur().key },
+    "Primer paso: elige Gemini o ChatGPT y pega tu clave de API abajo en Einstellungen. ",
     h("button", { class: "mini", type: "button", style: "color:inherit", onclick: openSettings }, "Ir a Einstellungen"));
   const books = MODS.map(m => {
     const b = h("button", { class: "book", type: "button", onclick: () => { location.hash = m.id; } },
@@ -516,48 +828,91 @@ function initHome() {
   nameIn.addEventListener("change", () => { settings.name = nameIn.value.trim() || "Axel"; nameIn.value = settings.name; store.set("name", settings.name); renderHello(); });
   const segBtns = [["Normal", false], ["Langsam", true]].map(([t, v]) => {
     const b = h("button", { type: "button", "aria-pressed": String(settings.slow === v) }, t);
-    b.addEventListener("click", () => { settings.slow = v; store.set("slow", v); segBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); speak("Hallo! So klingt das Sprechtempo."); });
+    b.addEventListener("click", () => { settings.slow = v; store.set("slow", v); segBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); speak("Hallo! So klingt das Sprechtempo.", b); });
     return b;
   });
-  const keyIn = h("input", { id: "gk", type: "password", value: cfg.key, placeholder: "AIza…", autocomplete: "off", spellcheck: "false" });
-  const eye = h("button", { class: "ghost", type: "button" }, "Ver");
-  eye.addEventListener("click", () => { const vis = keyIn.type === "password"; keyIn.type = vis ? "text" : "password"; eye.textContent = vis ? "Ocultar" : "Ver"; });
-  const saveKey = () => { cfg.key = keyIn.value.trim(); keyIn.value = cfg.key; store.set("gm.key", cfg.key); banner.hidden = !!cfg.key; };
-  keyIn.addEventListener("change", saveKey);
-  const dl = h("datalist", { id: "gm-models" });
-  const modelIn = h("input", { id: "gm", type: "text", value: cfg.model, list: "gm-models", autocomplete: "off", spellcheck: "false" });
-  modelIn.addEventListener("change", () => { cfg.model = modelIn.value.trim() || "gemini-flash-latest"; modelIn.value = cfg.model; store.set("gm.model", cfg.model); });
-  const fastIn = h("input", { id: "gf", type: "text", value: cfg.fast, list: "gm-models", autocomplete: "off", spellcheck: "false" });
-  fastIn.addEventListener("change", () => { cfg.fast = fastIn.value.trim() || "gemini-3.5-flash-lite"; fastIn.value = cfg.fast; store.set("gm.fast", cfg.fast); });
-  const status = h("p", { class: "status", role: "status" });
-  const test = h("button", { class: "ghost", type: "button" }, "Verbindung testen");
-  test.addEventListener("click", async () => {
-    saveKey();
-    if (!cfg.key) { status.className = "status bad"; status.textContent = ERR_COPY.no_key; return; }
-    test.disabled = true; status.className = "status"; status.textContent = "Prüfe…";
-    try {
-      const names = await listModels(cfg.key);
-      dl.replaceChildren(...names.map(n => h("option", { value: n })));
-      const missing = [cfg.model, cfg.fast].filter(m => !names.includes(m) && !/latest$/.test(m));
-      status.className = missing.length ? "status bad" : "status ok";
-      status.textContent = missing.length
-        ? `Clave OK, pero no encuentro: ${missing.join(", ")}. Toca el campo de modelo para ver la lista.`
-        : `Verbindung OK. ${names.length} modelos disponibles.`;
-    } catch (e) { status.className = "status bad"; status.textContent = errText(e); }
-    finally { test.disabled = false; }
+  const provBox = h("div", { class: "settings", style: "margin:0;padding:0;border:0" });
+  const dl = h("datalist", { id: "ai-models" });
+  const provBtns = Object.keys(PROVIDERS).map(id => {
+    const b = h("button", { type: "button", "aria-pressed": String(cfg.provider === id) }, PROVIDERS[id].label);
+    b.addEventListener("click", () => { cfg.provider = id; store.set("prov", id); provBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); dl.replaceChildren(); renderProv(); banner.hidden = !!cur().key; });
+    return b;
+  });
+  function renderProv() {
+    const id = cfg.provider, P = PROVIDERS[id], c = cfg[id];
+    const keyIn = h("input", { id: "gk", type: "password", value: c.key, placeholder: P.keyHint, autocomplete: "off", spellcheck: "false" });
+    const eye = h("button", { class: "ghost", type: "button" }, "Ver");
+    eye.addEventListener("click", () => { const vis = keyIn.type === "password"; keyIn.type = vis ? "text" : "password"; eye.textContent = vis ? "Ocultar" : "Ver"; });
+    const saveKey = () => { c.key = keyIn.value.trim(); keyIn.value = c.key; saveCfg(id); banner.hidden = !!c.key; };
+    keyIn.addEventListener("change", saveKey);
+    const modelIn = h("input", { id: "gm", type: "text", value: c.model, list: "ai-models", autocomplete: "off", spellcheck: "false" });
+    modelIn.addEventListener("change", () => { c.model = modelIn.value.trim() || P.defModel; modelIn.value = c.model; saveCfg(id); });
+    const fastIn = h("input", { id: "gf", type: "text", value: c.fast, list: "ai-models", autocomplete: "off", spellcheck: "false" });
+    fastIn.addEventListener("change", () => { c.fast = fastIn.value.trim() || P.defFast; fastIn.value = c.fast; saveCfg(id); });
+    const status = h("p", { class: "status", role: "status" });
+    const test = h("button", { class: "ghost", type: "button" }, "Verbindung testen");
+    test.addEventListener("click", async () => {
+      saveKey();
+      if (!c.key) { status.className = "status bad"; status.textContent = ERR_COPY.no_key; return; }
+      test.disabled = true; status.className = "status"; status.textContent = "Prüfe…";
+      try {
+        const names = await listModels(id, c.key);
+        dl.replaceChildren(...names.map(n => h("option", { value: n })));
+        const missing = [c.model, c.fast].filter(m => !names.includes(m) && !/latest$/.test(m));
+        status.className = missing.length ? "status bad" : "status ok";
+        status.textContent = missing.length
+          ? `Clave OK, pero no encuentro: ${missing.join(", ")}. Toca el campo de modelo para ver la lista.`
+          : `Verbindung OK. ${names.length} modelos disponibles.`;
+      } catch (e) { status.className = "status bad"; status.textContent = errText(e); }
+      finally { test.disabled = false; }
+    });
+    provBox.replaceChildren(
+      h("div", { class: "field stack" }, h("label", { for: "gk" }, `${P.label} API-Schlüssel`), h("div", { class: "keyrow" }, keyIn, eye),
+        h("p", { class: "note" }, P.note + " Clave en ", h("a", { href: P.keyUrl, target: "_blank", rel: "noopener" }, P.keyUrlText), ". Se guarda solo en este dispositivo.")),
+      h("div", { class: "field stack" }, h("label", { for: "gm" }, "Modell (Lesefreund, Satzdoktor, Sag's)"), modelIn),
+      h("div", { class: "field stack" }, h("label", { for: "gf" }, "Schnelles Modell (Kaffeeklatsch)"), fastIn, dl),
+      h("div", { class: "field" }, test), status);
+  }
+  renderProv();
+  const voiceSel = h("select", { id: "vs", class: "vsel" });
+  const fillVoices = () => {
+    const g = h("optgroup", { label: "Natürlich (Gemini)" }, GEMINI_VOICES.map(([id, label]) => h("option", { value: "g:" + id }, label)));
+    const d = h("optgroup", { label: "Gerätestimme (offline)" },
+      deVoices.length ? deVoices.map(v => h("option", { value: "d:" + v.voiceURI }, `${v.name} (${v.lang})`)) : h("option", { value: "d:auto" }, "Automatisch"));
+    voiceSel.replaceChildren(g, d);
+    voiceSel.value = settings.voice;
+    if (voiceSel.value !== settings.voice) voiceSel.value = settings.voice.startsWith("g:") ? "g:Kore" : voiceSel.options[GEMINI_VOICES.length].value;
+  };
+  fillVoices();
+  document.addEventListener("doichi-voices", fillVoices);
+  const ttsIn = h("input", { id: "tm", type: "text", value: cfg.gemini.tts, autocomplete: "off", spellcheck: "false" });
+  ttsIn.addEventListener("change", () => { cfg.gemini.tts = ttsIn.value.trim() || "gemini-3.8-flash-lite-tts"; ttsIn.value = cfg.gemini.tts; store.set("gm.tts", cfg.gemini.tts); ttsCooldownUntil = 0; ttsNotice = false; });
+  const ttsRow = h("div", { class: "field stack" }, h("label", { for: "tm" }, "Sprachmodell (natürliche Stimme)"), ttsIn,
+    h("p", { class: "note", text: "Las voces naturales usan tu cuota gratis de Gemini. Cada frase se descarga una sola vez y queda guardada. Si se acaba la cuota, Doichi usa la voz del dispositivo automáticamente." }));
+  const syncTts = () => { ttsRow.hidden = !settings.voice.startsWith("g:"); };
+  voiceSel.addEventListener("change", () => { settings.voice = voiceSel.value; store.set("voice", settings.voice); ttsCooldownUntil = 0; ttsNotice = false; pickVoice(); syncTts(); });
+  const probe = h("button", { class: "ghost", type: "button" }, "Probe");
+  probe.addEventListener("click", () => speak("Hallo! Ich bin deine Stimme in Doichi. Viel Spaß beim Deutschlernen!", probe));
+  syncTts();
+  const voiceBox = h("div", { class: "settings", style: "margin:0;padding:0;border:0" },
+    h("div", { class: "field stack" }, h("label", { for: "vs" }, "Stimme"), h("div", { class: "keyrow" }, voiceSel, probe)),
+    ttsRow);
+  const lvlBtns = LEVELS.map(v => {
+    const b = h("button", { type: "button", "aria-pressed": String(lvl() === v) }, v);
+    b.addEventListener("click", () => { settings.level = v; store.set("level", v); lvlBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+    return b;
   });
   home.append(
     h("h1", { class: "brand", text: "Doichi" }), hello, banner, ...books,
     h("div", { class: "settings" },
       h("h2", { text: "Einstellungen" }),
-      h("div", { class: "field stack" }, h("label", { for: "gk" }, "Gemini API-Schlüssel"), h("div", { class: "keyrow" }, keyIn, eye),
-        h("p", { class: "note" }, "Gratis en ", h("a", { href: "https://aistudio.google.com/apikey", target: "_blank", rel: "noopener" }, "aistudio.google.com/apikey"), ". Se guarda solo en este dispositivo.")),
-      h("div", { class: "field stack" }, h("label", { for: "gm" }, "Modell (Lesefreund, Satzdoktor, Sag's)"), modelIn),
-      h("div", { class: "field stack" }, h("label", { for: "gf" }, "Schnelles Modell (Kaffeeklatsch)"), fastIn, dl),
-      h("div", { class: "field" }, test), status,
+      h("div", { class: "field" }, h("span", null, "KI-Anbieter"), h("div", { class: "seg", role: "group", "aria-label": "KI-Anbieter" }, provBtns)),
+      provBox,
       h("div", { class: "field" }, h("label", { for: "nm" }, "Dein Name"), nameIn),
+      h("div", { class: "field" }, h("span", null, "Dein Niveau"), h("div", { class: "seg", role: "group", "aria-label": "Niveau" }, lvlBtns)),
       h("div", { class: "field" }, h("span", null, "Sprechtempo"), h("div", { class: "seg", role: "group", "aria-label": "Sprechtempo" }, segBtns)),
-      h("p", { class: "note", text: "En el plan gratuito, Google puede usar tus consultas para mejorar sus productos. No escribas datos privados." }))
+      voiceBox,
+      h("p", { class: "note", text: "Todo se guarda solo en este dispositivo. Con Gemini gratis, Google puede usar tus consultas para mejorar sus productos: no escribas datos privados." }))
   );
 }
 
@@ -622,7 +977,7 @@ function initLese() {
 
   async function transcribe(files) {
     state.lastErr = null;
-    if (!cfg.key) { state.lastErr = { code: "no_key" }; renderPanel(); return; }
+    if (!cur().key) { state.lastErr = { code: "no_key" }; renderPanel(); return; }
     const prepared = [];
     for (const f of files) {
       try { prepared.push(await prepImage(f)); }
@@ -679,6 +1034,7 @@ function initLese() {
       return w;
     }
     const sent = str(d.sentence);
+    prefetchSpeech(sent);
     w.append(h("p", { class: "line" }, h("span", { class: "lbl" }, "Oración: "), h("span", { class: "de-text" }, sent), " ", sayBtn(sent)));
     if (str(d.translation)) w.append(lineEl("Traducción:", str(d.translation)));
     w.append(breakdownEl(d.breakdown));
@@ -738,6 +1094,7 @@ function initSatz() {
   function render(d, orig) {
     const v = ["correct", "almost", "wrong"].includes(d && d.verdict) ? d.verdict : "almost";
     const corr = str(d && d.corrected) || orig;
+    prefetchSpeech(corr);
     const w = h("div");
     const labels = { correct: "Richtig!", almost: "Fast richtig", wrong: "Nicht ganz" };
     w.append(h("div", { class: "verdict v-" + v }, h("span", { class: "dot" }), labels[v]));
@@ -793,6 +1150,7 @@ function initSag() {
   function render(d) {
     const w = h("div");
     const de = str(d && d.german);
+    prefetchSpeech(de);
     if (!de) { w.append(errBox({ code: "invalid_json" })); return w; }
     w.append(h("p", { class: "line" }, h("span", { class: "de-big" }, de), " ", sayBtn(de)));
     const alt = str(d.alt);
@@ -844,10 +1202,10 @@ function initKaffee() {
     const u = userName();
     const opening = kk.msgs.length === 0;
     const tr = kk.msgs.slice(-30).map(m => `${m.who === "her" ? kk.name : u}: ${m.text}`).join("\n");
-    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Eres simpática, curiosa y natural. Chateas con ${u}, un estudiante latinoamericano que practica alemán (nivel B1). Tema: ${kk.topic === "Freies Thema" ? "libre, lo que surja" : kk.topic}.
+    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Eres simpática, curiosa y natural. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema: ${kk.topic === "Freies Thema" ? "libre, lo que surja" : kk.topic}.
 
 Reglas:
-- Escribe SIEMPRE en alemán natural y sencillo (nivel B1): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga.
+- Escribe SIEMPRE en alemán natural y sencillo (nivel ${lvl()}): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga.
 - Mantén tu personaje y recuerda lo que ya se dijo. No digas que eres una IA.
 ${opening
   ? `- Empieza tú la conversación: saluda a ${u} por su nombre, preséntate en pocas palabras y haz una pregunta sobre el tema. No uses la frase «Wie geht's?». "fix" es null.`
@@ -866,7 +1224,7 @@ Responde SOLO con JSON:
     if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
     const sb = sayBtn(m.text);
     const node = h("div", { class: "msg her" }, h("div", { class: "who", text: kk.name }), h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
-    if (auto) setTimeout(() => speak(m.text, sb), 150);
+    if (auto) setTimeout(() => speak(m.text, sb), 150); else prefetchSpeech(m.text);
     return node;
   }
   function meEl(m) { return h("div", { class: "msg me" }, h("div", { class: "bubble", text: m.text })); }
