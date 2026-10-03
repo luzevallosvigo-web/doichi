@@ -333,7 +333,10 @@ const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gem
 const ttsKey = text => `${cfg.gemini.tts}|${settings.voice.slice(2)}|${text}`;
 const pendingAudio = new Map();
 
+// Emojis are shown in the chat but never read aloud.
+const speechText = t => String(t || "").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
 async function speak(text, btn) {
+  text = speechText(text);
   const wasActive = btn && (btn.classList.contains("playing") || btn.classList.contains("loading"));
   stopAudio();
   if (wasActive || !text) return;
@@ -397,6 +400,7 @@ function withTimeout(promise, ms) {
 }
 // Generate the main sentence's audio in the background, so the first tap plays instantly.
 function prefetchSpeech(text) {
+  text = speechText(text);
   if (!text || !naturalOn()) return;
   const key = ttsKey(text);
   if (pendingAudio.has(key)) return;
