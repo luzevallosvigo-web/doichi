@@ -1165,13 +1165,30 @@ function initSag() {
 /* ---------- D: Kaffeeklatsch ---------- */
 const NAMES = ["Lena", "Mia", "Hannah", "Emma", "Sophie", "Lea", "Marie", "Anna", "Clara", "Johanna", "Leonie", "Paula", "Greta", "Ida", "Frieda", "Mila", "Jana", "Katharina", "Luisa", "Nele", "Antonia", "Charlotte", "Julia", "Theresa", "Franziska", "Svenja", "Miriam", "Carla", "Lotte", "Merle", "Valentina", "Magdalena"];
 const CITIES = ["Wien", "Graz", "Salzburg", "Innsbruck", "Linz", "Klagenfurt", "München", "Berlin", "Hamburg", "Köln", "Leipzig", "Dresden", "Freiburg", "Heidelberg", "Bremen", "Zürich", "Bern"];
-const TOPICS = ["Freies Thema", "Alltag", "Uni & Studium", "Reisen", "Essen & Kochen", "Hobbys & Freizeit", "Arbeit & Technik", "Kultur & Filme"];
+const TOPICS = ["Freies Thema", "Überrasch mich!", "Alltag", "Uni & Studium", "Reisen", "Essen & Kochen", "Hobbys & Freizeit", "Arbeit & Karriere",
+  "Musik & Konzerte", "Filme & Serien", "Sport & Fitness", "Ausgehen & Feiern", "Liebe & Dating", "Familie & Freunde", "Wohnen & WG",
+  "Natur & Wandern", "Technik & Handys", "Wissenschaft", "Umwelt & Klima", "Kindheit & Erinnerungen", "Zukunftspläne & Träume", "Kurioses & Fun Facts"];
+const PERSONAS = [
+  { id: "nett", label: "Freundlich", emoji: "🙂",
+    desc: "Eres simpática, curiosa y natural." },
+  { id: "wuetend", label: "Wütend", emoji: "😠",
+    desc: "Estás de muy mal humor: irritable, sarcástica e impaciente. Te quejas de todo (el tráfico, tu jefe, el clima…), resoplas («Boah», «Echt jetzt?», «Na toll») y contestas con mordacidad, pero sigues la conversación y haces preguntas. Nunca uses insultos graves ni ataques por origen, aspecto o idioma; tu enfado es cómico, no cruel." },
+  { id: "flirt", label: "Flirty (sanft)", emoji: "😊",
+    desc: "Te gusta claramente tu interlocutor y coqueteas de forma dulce y tímida: cumplidos, curiosidad por su vida, bromas cariñosas y algún emoji ocasional (😊, 🙈)." },
+  { id: "flirthart", label: "Flirty (frech)", emoji: "😏",
+    desc: "Coqueteas de forma descarada y muy segura de ti: piropos atrevidos, dobles sentidos, insinuaciones pícaras y provocadoras, tensión romántica y propuestas de cita. Todo es sugerente, nunca explícito: nada de descripciones sexuales gráficas. Si él pide ir más allá, lo esquivas con picardía." },
+  { id: "besser", label: "Besserwisserin", emoji: "🤓",
+    desc: "Eres una sabelotodo: crees saberlo todo, corriges datos con «Eigentlich…» o «Na ja, genau genommen…», sueltas datos curiosos aunque nadie los pida y eres un poco condescendiente, aunque en el fondo simpática." },
+  { id: "zufall", label: "Zufällig", emoji: "🎲", desc: "" }
+];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 function initKaffee() {
   const mod = MODS[3];
   const { sec, feed, tools, subP } = buildScreen(mod, "Conversa en alemán con correcciones breves.");
-  const kk = { name: "", city: "", age: 0, topic: "Freies Thema", msgs: [], started: false };
+  const kk = { name: "", city: "", age: 0, topic: store.get("kk.topic", "Freies Thema"), persona: store.get("kk.persona", "nett"), mood: null, msgs: [], started: false };
+  if (!TOPICS.includes(kk.topic)) kk.topic = "Freies Thema";
+  if (!PERSONAS.some(p => p.id === kk.persona)) kk.persona = "nett";
   let auto = store.get("kk.auto", false);
   const autoBtn = h("button", { class: "pill", type: "button", "aria-pressed": String(auto), title: "Leer en voz alta sus respuestas" }, "Vorlesen");
   autoBtn.addEventListener("click", () => { auto = !auto; store.set("kk.auto", auto); autoBtn.setAttribute("aria-pressed", String(auto)); });
@@ -1202,14 +1219,17 @@ function initKaffee() {
     const u = userName();
     const opening = kk.msgs.length === 0;
     const tr = kk.msgs.slice(-30).map(m => `${m.who === "her" ? kk.name : u}: ${m.text}`).join("\n");
-    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Eres simpática, curiosa y natural. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema: ${kk.topic === "Freies Thema" ? "libre, lo que surja" : kk.topic}.
+    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema: ${kk.topicText}.
+
+Personalidad: ${kk.mood.desc}
+Mantén esta personalidad en TODOS tus mensajes, de forma clara y divertida.
 
 Reglas:
-- Escribe SIEMPRE en alemán natural y sencillo (nivel ${lvl()}): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga.
+- Escribe SIEMPRE en alemán natural y sencillo (nivel ${lvl()}): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga. Usa expresiones coloquiales típicas de tu personalidad.
 - Mantén tu personaje y recuerda lo que ya se dijo. No digas que eres una IA.
 ${opening
-  ? `- Empieza tú la conversación: saluda a ${u} por su nombre, preséntate en pocas palabras y haz una pregunta sobre el tema. No uses la frase «Wie geht's?». "fix" es null.`
-  : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación y detalles mínimos). Si está bien, "fix" es null. No menciones la corrección en "reply": sigue la conversación con naturalidad.
+  ? `- Empieza tú la conversación: saluda a ${u} por su nombre, ya con tu personalidad, preséntate en pocas palabras y haz una pregunta sobre el tema. No uses la frase «Wie geht's?». "fix" es null.`
+  : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación y detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en "reply": sigue la conversación con naturalidad.
 
 Conversación hasta ahora:
 ${tr}`}
@@ -1223,7 +1243,7 @@ Responde SOLO con JSON:
     const tBtn = m.es ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
     if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
     const sb = sayBtn(m.text);
-    const node = h("div", { class: "msg her" }, h("div", { class: "who", text: kk.name }), h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
+    const node = h("div", { class: "msg her" }, h("div", { class: "who", text: `${kk.name} ${kk.mood ? kk.mood.emoji : ""}`.trim() }), h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
     if (auto) setTimeout(() => speak(m.text, sb), 150); else prefetchSpeech(m.text);
     return node;
   }
@@ -1236,12 +1256,20 @@ Responde SOLO con JSON:
     subP.textContent = "Conversa en alemán con correcciones breves.";
     const chips = TOPICS.map(t => {
       const b = h("button", { class: "chip", type: "button", "aria-pressed": String(kk.topic === t) }, t);
-      b.addEventListener("click", () => { kk.topic = t; chips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+      b.addEventListener("click", () => { kk.topic = t; store.set("kk.topic", t); chips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+      return b;
+    });
+    const pchips = PERSONAS.map(pz => {
+      const b = h("button", { class: "chip", type: "button", "aria-pressed": String(kk.persona === pz.id) }, `${pz.emoji} ${pz.label}`);
+      b.addEventListener("click", () => { kk.persona = pz.id; store.set("kk.persona", pz.id); pchips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
       return b;
     });
     feed.replaceChildren(h("div", { class: "start" },
-      h("p", { class: "big", text: "Worüber möchtest du plaudern?" }),
-      h("p", { class: "muted small", style: "margin:0 0 14px", text: "Elige un tema. En cada sesión conoces a alguien nuevo." }),
+      h("p", { class: "big", text: "Wie ist sie heute drauf?" }),
+      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige la personalidad de tu compañera de chat." }),
+      h("div", { class: "chips" }, pchips),
+      h("p", { class: "big", style: "margin-top:26px", text: "Worüber möchtest du plaudern?" }),
+      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige un tema. En cada sesión conoces a alguien nuevo." }),
       h("div", { class: "chips" }, chips),
       h("button", { class: "primary", type: "button", onclick: begin }, "Gespräch beginnen")));
     comp.setDisabled(true);
@@ -1250,8 +1278,12 @@ Responde SOLO con JSON:
     const last = store.get("kk.last", "");
     let n; do { n = pick(NAMES); } while (n === last && NAMES.length > 1);
     store.set("kk.last", n);
-    Object.assign(kk, { name: n, city: pick(CITIES), age: 21 + Math.floor(Math.random() * 10), msgs: [], started: true });
-    subP.textContent = `Du plauderst mit ${kk.name} (${kk.age}) aus ${kk.city}.`;
+    const real = PERSONAS.filter(p => p.id !== "zufall");
+    const mood = kk.persona === "zufall" ? pick(real) : (real.find(p => p.id === kk.persona) || real[0]);
+    const topicText = kk.topic === "Freies Thema" ? "libre, lo que surja"
+      : kk.topic === "Überrasch mich!" ? pick(TOPICS.slice(2)) : kk.topic;
+    Object.assign(kk, { name: n, city: pick(CITIES), age: 21 + Math.floor(Math.random() * 10), mood, topicText, msgs: [], started: true });
+    subP.textContent = `Du plauderst mit ${kk.name} (${kk.age}) aus ${kk.city}. ${mood.emoji} ${mood.label}`;
     newBtn.hidden = false;
     feed.replaceChildren();
     reply();
