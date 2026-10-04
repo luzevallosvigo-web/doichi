@@ -330,7 +330,7 @@ function playBlob(key, blob, btn, text) {
   if (pr) pr.then(() => { player.playbackRate = rate; }).catch(() => { if (btn) btn.classList.remove("playing"); deviceSpeak(text, btn); });
 }
 const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && Date.now() > ttsCooldownUntil;
-const ttsKey = text => `${cfg.gemini.tts}|${settings.voice.slice(2)}|${text}`;
+const ttsKey = text => `v2|${cfg.gemini.tts}|${settings.voice.slice(2)}|${text}`;
 const pendingAudio = new Map();
 
 // Emojis are shown in the chat but never read aloud.
@@ -456,6 +456,24 @@ function pcmToWav(bytes, rate) {
 }
 const b64bytes = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
 function concatBytes(arrs) { let n = 0; for (const a of arrs) n += a.length; const o = new Uint8Array(n); let i = 0; for (const a of arrs) { o.set(a, i); i += a.length; } return o; }
+// Gemini 3.8 TTS can return WAV files (with header and extra chunks) instead of raw PCM.
+// Read the real sample data out of them, so header/metadata bytes are never played as noise.
+function unwrapWav(bytes) {
+  if (bytes.length < 12 || bytes[0] !== 0x52 || bytes[1] !== 0x49 || bytes[2] !== 0x46 || bytes[3] !== 0x46) return null; // "RIFF"
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
+  const tag = o => String.fromCharCode(bytes[o], bytes[o + 1], bytes[o + 2], bytes[o + 3]);
+  let rate = 0, p = 12;
+  while (p + 8 <= bytes.length) {
+    const id = tag(p); let size = dv.getUint32(p + 4, true); const start = p + 8;
+    if (id === "fmt " && start + 8 <= bytes.length) rate = dv.getUint32(start + 4, true);
+    if (id === "data") {
+      if (!size || size === 0xFFFFFFFF || start + size > bytes.length) size = bytes.length - start;
+      return { pcm: bytes.slice(start, start + size), rate };
+    }
+    p = start + size + (size % 2);
+  }
+  return { pcm: new Uint8Array(0), rate };
+}
 function audioParts(obj) {
   const parts = (obj && obj.candidates && obj.candidates[0] && obj.candidates[0].content && obj.candidates[0].content.parts) || [];
   const chunks = []; let rate = 0;
@@ -464,9 +482,44 @@ function audioParts(obj) {
     if (!inl || !inl.data) continue;
     const m = String(inl.mimeType || inl.mime_type || "").match(/rate=(\d+)/);
     if (m) rate = +m[1];
-    chunks.push(b64bytes(inl.data));
+    let bytes = b64bytes(inl.data);
+    const w = unwrapWav(bytes);
+    if (w) { bytes = w.pcm; if (w.rate) rate = w.rate; }
+    if (bytes.length) chunks.push(bytes);
   }
   return { chunks, rate };
+}
+// Clean the end of a clip: cut a short noise burst after the final pause (the "radio" sound)
+// and fade in/out a few milliseconds so the audio never starts or stops with a click.
+function cleanPcm(bytes, rate, opts = {}) {
+  const n = Math.floor(bytes.length / 2);
+  if (!n) return new Uint8Array(0);
+  const src = new DataView(bytes.buffer, bytes.byteOffset, n * 2);
+  const smp = new Float32Array(n);
+  let peak = 0;
+  for (let i = 0; i < n; i++) { const v = src.getInt16(i * 2, true); smp[i] = v; const a = Math.abs(v); if (a > peak) peak = a; }
+  let end = n;
+  if (opts.trim !== false && peak > 0) {
+    const f = Math.max(1, Math.round(rate * 0.01)), frames = Math.floor(n / f), thr = peak * 0.03;
+    const loud = new Array(frames);
+    for (let k = 0; k < frames; k++) { let sum = 0; for (let i = k * f; i < (k + 1) * f; i++) sum += smp[i] * smp[i]; loud[k] = Math.sqrt(sum / f) > thr; }
+    let k = frames - 1; while (k >= 0 && !loud[k]) k--;            // skip trailing silence
+    const burstEnd = k; while (k >= 0 && loud[k]) k--;              // last loud stretch
+    const burstStart = k + 1, burstLen = burstEnd - k;
+    let g = k; while (g >= 0 && !loud[g]) g--;                      // pause before it
+    const gapLen = k - g;
+    // a short burst (<= 250 ms) after a clear pause (>= 120 ms), right at the very end
+    if (burstEnd >= 0 && g >= 0 && burstLen > 0 && burstLen <= 25 && gapLen >= 12 && frames - burstEnd <= 60) {
+      end = Math.min((g + 1 + 8) * f, burstStart * f);
+    }
+  }
+  const fi = opts.fadeIn === false ? 0 : Math.min(end, Math.round(rate * 0.006));
+  const fo = opts.fadeOut === false ? 0 : Math.min(end, Math.round(rate * 0.03));
+  for (let i = 0; i < fi; i++) smp[i] *= i / fi;
+  for (let i = 0; i < fo; i++) smp[end - 1 - i] *= i / fo;
+  const out = new Uint8Array(end * 2), dv = new DataView(out.buffer);
+  for (let i = 0; i < end; i++) dv.setInt16(i * 2, Math.max(-32768, Math.min(32767, Math.round(smp[i]))), true);
+  return out;
 }
 // Only the German text is sent: no instructions, so the voice starts directly with the sentence.
 const ttsBody = text => ({ contents: [{ parts: [{ text }] }],
@@ -476,7 +529,8 @@ async function fetchTTS(text, signal) {
   const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text), signal);
   const { chunks, rate } = audioParts(data);
   if (!chunks.length) throw { code: "empty_completion" };
-  return new Blob([pcmToWav(concatBytes(chunks), rate || 24000)], { type: "audio/wav" });
+  const r = rate || 24000;
+  return new Blob([pcmToWav(cleanPcm(concatBytes(chunks), r), r)], { type: "audio/wav" });
 }
 async function streamTTS(text, signal, token, onStart, btn) {
   const g = cfg.gemini, ctx = audioCtx();
@@ -491,13 +545,11 @@ async function streamTTS(text, signal, token, onStart, btn) {
     throw httpError(res.status, er.message, er.status);
   }
   const reader = res.body.getReader(), dec = new TextDecoder();
-  const all = []; let rate = 24000, buf = "", t = 0, leftover = null, last = null;
+  const all = []; let rate = 24000, buf = "", t = 0, last = null, pend = new Uint8Array(0), firstOut = true;
   const sources = liveSources;
   const schedule = bytes => {
     if (token !== speakToken) return;
-    if (leftover) { bytes = concatBytes([leftover, bytes]); leftover = null; }
-    if (bytes.length % 2) { leftover = bytes.slice(-1); bytes = bytes.slice(0, -1); }
-    const n = bytes.length / 2; if (!n) return;
+    const n = Math.floor(bytes.length / 2); if (!n) return;
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
     const ab = ctx.createBuffer(1, n, rate), ch = ab.getChannelData(0);
     for (let i = 0; i < n; i++) ch[i] = dv.getInt16(i * 2, true) / 32768;
@@ -513,7 +565,16 @@ async function streamTTS(text, signal, token, onStart, btn) {
     if (obj.error) throw httpError(obj.error.code || 0, obj.error.message, obj.error.status);
     const p = audioParts(obj);
     if (p.rate) rate = p.rate;
-    for (const c of p.chunks) { all.push(c); schedule(c); }
+    for (const c of p.chunks) { all.push(c); feed(c); }
+  };
+  const feed = c => {
+    pend = concatBytes([pend, c]);
+    const hold = Math.round(rate * 0.5) * 2;
+    if (pend.length > hold + rate * 0.2 * 2) {
+      let cut = pend.length - hold; cut -= cut % 2;
+      const head = pend.slice(0, cut); pend = pend.slice(cut);
+      schedule(cleanPcm(head, rate, { trim: false, fadeIn: firstOut, fadeOut: false })); firstOut = false;
+    }
   };
   for (;;) {
     let r;
@@ -525,8 +586,9 @@ async function streamTTS(text, signal, token, onStart, btn) {
   }
   if (buf.trim()) handleEvent(buf);
   if (!all.length) throw { code: "empty_completion" };
+  if (pend.length) schedule(cleanPcm(pend, rate, { fadeIn: firstOut }));
   if (last && btn) last.onended = () => { if (token === speakToken) btn.classList.remove("playing"); };
-  return new Blob([pcmToWav(concatBytes(all), rate)], { type: "audio/wav" });
+  return new Blob([pcmToWav(cleanPcm(concatBytes(all), rate), rate)], { type: "audio/wav" });
 }
 
 /* ---------- AI providers (Gemini / ChatGPT) ---------- */
@@ -537,7 +599,7 @@ const PROVIDERS = {
     note: "De pago por uso: necesitas saldo en platform.openai.com (Billing).", defModel: "gpt-6.1-sol", defFast: "gpt-6-luna" }
 };
 const PFX = { gemini: "gm", openai: "oa" };
-const cfg = { provider: store.get("prov", "gemini") === "openai" ? "openai" : "gemini" };
+const cfg = { provider: "gemini" };
 for (const id of Object.keys(PROVIDERS)) {
   cfg[id] = { key: store.get(PFX[id] + ".key", ""), model: store.get(PFX[id] + ".model", PROVIDERS[id].defModel), fast: store.get(PFX[id] + ".fast", PROVIDERS[id].defFast) };
 }
@@ -820,7 +882,7 @@ function initHome() {
   const renderHello = () => hello.replaceChildren("Hallo, ", h("b", { text: userName() }), ". Was übst du heute?");
   renderHello();
   const banner = h("p", { class: "banner", hidden: !!cur().key },
-    "Primer paso: elige Gemini o ChatGPT y pega tu clave de API abajo en Einstellungen. ",
+    "Primer paso: crea tu clave gratis de Gemini y pégala abajo en Einstellungen. ",
     h("button", { class: "mini", type: "button", style: "color:inherit", onclick: openSettings }, "Ir a Einstellungen"));
   const books = MODS.map(m => {
     const b = h("button", { class: "book", type: "button", onclick: () => { location.hash = m.id; } },
@@ -910,7 +972,6 @@ function initHome() {
     h("h1", { class: "brand", text: "Doichi" }), hello, banner, ...books,
     h("div", { class: "settings" },
       h("h2", { text: "Einstellungen" }),
-      h("div", { class: "field" }, h("span", null, "KI-Anbieter"), h("div", { class: "seg", role: "group", "aria-label": "KI-Anbieter" }, provBtns)),
       provBox,
       h("div", { class: "field" }, h("label", { for: "nm" }, "Dein Name"), nameIn),
       h("div", { class: "field" }, h("span", null, "Dein Niveau"), h("div", { class: "seg", role: "group", "aria-label": "Niveau" }, lvlBtns)),
