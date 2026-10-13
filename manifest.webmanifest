@@ -1,7 +1,7 @@
 {
   "name": "Doichi",
   "short_name": "Doichi",
-  "description": "Dein Deutsch-Begleiter: Lesefreund, Satzdoktor, Sag's auf Deutsch!, Kaffeeklatsch",
+  "description": "Dein Deutsch-Begleiter: Übersetzer, Satzdoktor, Sag's auf Deutsch!, Kaffeeklatsch",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

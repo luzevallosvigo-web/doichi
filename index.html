@@ -124,12 +124,9 @@ button:disabled{cursor:default}
 .bd{margin:6px 0 12px;padding-left:20px}
 .bd li{margin:0 0 7px}
 .frag{font-family:var(--serif);font-weight:500;border:0;background:none;padding:0;text-align:left;text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3px}
-.frag.focus{background:linear-gradient(transparent 58%, rgba(242,194,0,.55) 0)}
 .func{color:var(--muted)}
 .say{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:inline-grid;place-items:center;vertical-align:-8px;padding:0;color:var(--ink)}
 .say.playing,.frag.playing{color:var(--focus);border-color:var(--focus)}
-.others{display:grid;gap:6px;margin-top:4px}
-.other{border:0;border-left:3px solid var(--line);background:none;text-align:left;padding:4px 10px;font-family:var(--serif);font-style:italic;font-size:15px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid var(--line);background:none;border-radius:999px;padding:5px 12px;font-size:14px}
 .chip[aria-pressed="true"]{background:var(--c);color:var(--on);border-color:transparent}
@@ -146,18 +143,25 @@ ins.x{background:var(--hl);text-decoration:none;border-radius:2px;padding:0 2px}
 .errs li{margin-bottom:5px}
 .tip{background:var(--soft);padding:9px 12px;border-radius:4px;font-size:15px;margin:0}
 
-/* Lesefreund pages panel */
-.pages{flex:none;padding:12px 16px;border-bottom:1px solid var(--line)}
-.drop{width:100%;border:1.5px dashed var(--ink);border-radius:4px;padding:22px 14px;background:none;text-align:center}
-.drop strong{display:block;font-family:var(--cond);font-size:23px;font-weight:700;line-height:1.1}
-.drop span{font-size:14px;color:var(--muted)}
-.drop:disabled{opacity:.45}
-.thumbs{display:flex;gap:6px;overflow-x:auto;margin:0 0 8px}
-.thumbs img{height:58px;border-radius:2px;border:1px solid var(--line);flex:none}
-.pstat{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
-.pstat .ready{font-weight:600;margin-right:auto}
 .ghost{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 12px;font-size:14px}
-.ocrtext{max-height:38vh;overflow:auto;white-space:pre-wrap;font-family:var(--serif);font-size:15px;line-height:1.55;background:var(--soft);padding:12px;margin:10px 0 0;border-radius:4px}
+
+/* Übersetzer: structures */
+.lit{color:var(--muted);font-style:italic}
+.sect{font-family:var(--cond);font-weight:700;font-size:20px;margin:18px 0 8px}
+.st-0{--sc:var(--yellow);--sca:rgba(242,194,0,.42);--sct:#1D1D1B}
+.st-1{--sc:var(--green);--sca:rgba(62,150,99,.32);--sct:#FFFFFF}
+.st-2{--sc:var(--red);--sca:rgba(213,87,75,.3);--sct:#FFFFFF}
+.st-3{--sc:var(--blue);--sca:rgba(70,119,196,.32);--sct:#FFFFFF}
+mark.sm{background:var(--sca);color:inherit;border-radius:3px;padding:0 2px}
+.sn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--sc);color:var(--sct);font:700 10px/1 var(--sans);font-style:normal;vertical-align:super;margin-left:2px}
+.st{border-left:3px solid var(--sc);padding:2px 0 2px 12px;margin:0 0 16px}
+.st-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px}
+.st-h .sn{vertical-align:baseline;margin:0;width:20px;height:20px;font-size:12px;flex:none}
+.pat{display:inline-block;font-family:var(--cond);font-weight:600;font-size:15px;background:var(--soft);border-radius:4px;padding:1px 8px;margin:6px 0 2px}
+.st-x{margin:4px 0 6px;font-size:15px}
+.ex{margin:0;padding-left:18px;font-size:15px}
+.ex li{margin:0 0 6px}
+.ex .frag{font-style:italic}
 
 /* Kaffeeklatsch */
 .msg{display:flex;flex-direction:column;margin:12px 0}
@@ -174,6 +178,30 @@ ins.x{background:var(--hl);text-decoration:none;border-radius:2px;padding:0 2px}
 .fix .why{color:var(--muted)}
 .start{padding:30px 2px}
 .start .big{font-family:var(--serif);font-size:22px;margin:0 0 4px}
+.msg.cont{margin-top:4px}
+.contacts{display:grid;gap:8px;margin:0 0 30px}
+.contact{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 0}
+.crow{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:6px 6px 6px 10px}
+.ava{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--ac);color:var(--aon);font-family:var(--cond);font-weight:700;font-size:20px}
+.cinfo{flex:1;min-width:0;display:grid}
+.cinfo b{font-weight:600}
+.cprev{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctime{flex:none;font-size:12px;color:var(--muted);align-self:flex-start;padding-top:8px}
+.cdel{flex:none;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;width:34px;height:34px;border-radius:50%}
+.prof{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0 6px}
+.prof .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.prof .ph div{display:grid}
+.prof .ph div span{font-size:14px;color:var(--muted)}
+.prof ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-family:var(--serif);font-size:15px}
+.vnote{display:flex;align-items:center;gap:10px;min-width:210px}
+.vplay{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--c);color:var(--on);display:grid;place-items:center;padding:0}
+.vplay.playing{background:var(--focus)}
+.vplay.loading{animation:pulse 1s infinite}
+.wave{flex:1;display:flex;align-items:center;gap:2px;height:26px;opacity:.6}
+.wave i{flex:1;max-width:4px;border-radius:2px;background:currentColor}
+.vlen{flex:none;font-family:var(--sans);font-size:13px;color:var(--muted)}
+.vtext{font-family:var(--serif);font-style:italic;font-size:16px;max-width:86%;margin-top:6px}
+.field textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:8px 12px;font:inherit;font-size:16px;line-height:1.4;resize:vertical;background:var(--paper);color:var(--ink)}
 
 .thinking{color:var(--muted);font-size:15px;display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap}
 .dots{display:inline-flex;gap:3px}
@@ -188,7 +216,7 @@ ins.x{background:var(--hl);text-decoration:none;border-radius:2px;padding:0 2px}
 <body>
 <div id="app">
   <section id="home" class="screen" aria-label="Doichi"></section>
-  <section id="lese" class="screen" hidden></section>
+  <section id="ueber" class="screen" hidden></section>
   <section id="satz" class="screen" hidden></section>
   <section id="sag" class="screen" hidden></section>
   <section id="kaffee" class="screen" hidden></section>
@@ -219,7 +247,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("doichi." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("doichi." + k, JSON.stringify(v)); } catch {} }
 };
-const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false), level: store.get("level", "B1") };
+const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false), level: store.get("level", "B1"), about: store.get("about", "") };
 const LEVELS = ["A2", "B1", "B2"];
 const lvl = () => LEVELS.includes(settings.level) ? settings.level : "B1";
 const lvlUp = () => ({ A2: "B1", B1: "B2", B2: "C1" })[lvl()];
@@ -230,6 +258,7 @@ const ICON = {
   send: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>',
   stop: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/></svg>',
   mic: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>',
+  play: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>'
 };
 
@@ -330,12 +359,14 @@ function playBlob(key, blob, btn, text) {
   if (pr) pr.then(() => { player.playbackRate = rate; }).catch(() => { if (btn) btn.classList.remove("playing"); deviceSpeak(text, btn); });
 }
 const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && Date.now() > ttsCooldownUntil;
-const ttsKey = text => `v2|${cfg.gemini.tts}|${settings.voice.slice(2)}|${text}`;
+// Natural-voice name: the Settings voice, or a per-girl voice in Kaffeeklatsch (only when a Gemini voice is selected).
+const voiceName = v => (v && settings.voice.startsWith("g:")) ? v : settings.voice.slice(2);
+const ttsKey = (text, v) => `v2|${cfg.gemini.tts}|${voiceName(v)}|${text}`;
 const pendingAudio = new Map();
 
 // Emojis are shown in the chat but never read aloud.
 const speechText = t => String(t || "").replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "").replace(/\s{2,}/g, " ").trim();
-async function speak(text, btn) {
+async function speak(text, btn, opts = {}) {
   text = speechText(text);
   const wasActive = btn && (btn.classList.contains("playing") || btn.classList.contains("loading"));
   stopAudio();
@@ -343,7 +374,8 @@ async function speak(text, btn) {
   const token = speakToken;
   if (!naturalOn()) { deviceSpeak(text, btn); return; }
   unlockPlayer();
-  const key = ttsKey(text);
+  const v = opts.voice;
+  const key = ttsKey(text, v);
   try {
     let blob = await idbGet(key);
     if (!blob && pendingAudio.has(key)) {
@@ -361,17 +393,17 @@ async function speak(text, btn) {
       // Normal speed: stream and start playing as soon as the first audio arrives.
       // Slow speed: download fully, then play at 0.8x with natural pitch.
       if (!settings.slow && !streamUnsupported && audioCtx()) {
-        try { blob = await streamTTS(text, ctl.signal, token, onStart, btn); }
+        try { blob = await streamTTS(text, ctl.signal, token, onStart, btn, v); }
         catch (e) {
           if (e && e.code === "bad_request" && !started) { streamUnsupported = true; blob = null; }
           else throw e;
         }
         if (!blob && streamUnsupported && token === speakToken) {
-          blob = await fetchTTS(text, ctl.signal);
+          blob = await fetchTTS(text, ctl.signal, v);
           if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
         }
       } else {
-        blob = await fetchTTS(text, ctl.signal);
+        blob = await fetchTTS(text, ctl.signal, v);
         if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
       }
     } finally { clearTimeout(timer); if (liveCtl === ctl) liveCtl = null; }
@@ -399,25 +431,27 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), ms))]);
 }
 // Generate the main sentence's audio in the background, so the first tap plays instantly.
-function prefetchSpeech(text) {
+// Returns the pending job (a Promise of the audio Blob), or null when natural voices are off.
+function prefetchSpeech(text, v) {
   text = speechText(text);
-  if (!text || !naturalOn()) return;
-  const key = ttsKey(text);
-  if (pendingAudio.has(key)) return;
+  if (!text || !naturalOn()) return null;
+  const key = ttsKey(text, v);
+  if (pendingAudio.has(key)) return pendingAudio.get(key);
   const job = (async () => {
     const have = await idbGet(key);
     if (have) return have;
-    const blob = await fetchTTS(text);
+    const blob = await fetchTTS(text, undefined, v);
     idbPut(key, blob);
     return blob;
   })();
   pendingAudio.set(key, job);
   job.catch(e => { if (e && e.code === "rate_limited") ttsCooldownUntil = Date.now() + 5 * 60 * 1000; })
      .finally(() => setTimeout(() => pendingAudio.delete(key), 1000));
+  return job;
 }
-function sayBtn(text) {
+function sayBtn(text, v) {
   const b = h("button", { class: "say", type: "button", "aria-label": "Anhören", title: "Anhören" });
-  b.innerHTML = ICON.speak; b.addEventListener("click", () => speak(text, b));
+  b.innerHTML = ICON.speak; b.addEventListener("click", () => speak(text, b, { voice: v }));
   return b;
 }
 
@@ -522,22 +556,22 @@ function cleanPcm(bytes, rate, opts = {}) {
   return out;
 }
 // Only the German text is sent: no instructions, so the voice starts directly with the sentence.
-const ttsBody = text => ({ contents: [{ parts: [{ text }] }],
-  generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: settings.voice.slice(2) } } } } });
-async function fetchTTS(text, signal) {
+const ttsBody = (text, v) => ({ contents: [{ parts: [{ text }] }],
+  generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName(v) } } } } });
+async function fetchTTS(text, signal, v) {
   const g = cfg.gemini;
-  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text), signal);
+  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text, v), signal);
   const { chunks, rate } = audioParts(data);
   if (!chunks.length) throw { code: "empty_completion" };
   const r = rate || 24000;
   return new Blob([pcmToWav(cleanPcm(concatBytes(chunks), r), r)], { type: "audio/wav" });
 }
-async function streamTTS(text, signal, token, onStart, btn) {
+async function streamTTS(text, signal, token, onStart, btn, v) {
   const g = cfg.gemini, ctx = audioCtx();
   let res;
   try {
     res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:streamGenerateContent?alt=sse`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(ttsBody(text)), signal });
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(ttsBody(text, v)), signal });
   } catch (e) { throw { code: signal && signal.aborted ? "cancelled" : "network" }; }
   if (!res.ok || !res.body) {
     let d = null; try { d = await res.json(); } catch {}
@@ -591,14 +625,12 @@ async function streamTTS(text, signal, token, onStart, btn) {
   return new Blob([pcmToWav(cleanPcm(concatBytes(all), rate), rate)], { type: "audio/wav" });
 }
 
-/* ---------- AI providers (Gemini / ChatGPT) ---------- */
+/* ---------- AI provider: Gemini ---------- */
 const PROVIDERS = {
   gemini: { label: "Gemini", keyHint: "AIza…", keyUrl: "https://aistudio.google.com/apikey", keyUrlText: "aistudio.google.com/apikey",
-    note: "Gratis (con límites diarios).", defModel: "gemini-flash-latest", defFast: "gemini-3.5-flash-lite" },
-  openai: { label: "ChatGPT", keyHint: "sk-…", keyUrl: "https://platform.openai.com/api-keys", keyUrlText: "platform.openai.com/api-keys",
-    note: "De pago por uso: necesitas saldo en platform.openai.com (Billing).", defModel: "gpt-6.1-sol", defFast: "gpt-6-luna" }
+    note: "Gratis (con límites diarios).", defModel: "gemini-flash-latest", defFast: "gemini-3.5-flash-lite" }
 };
-const PFX = { gemini: "gm", openai: "oa" };
+const PFX = { gemini: "gm" };
 const cfg = { provider: "gemini" };
 for (const id of Object.keys(PROVIDERS)) {
   cfg[id] = { key: store.get(PFX[id] + ".key", ""), model: store.get(PFX[id] + ".model", PROVIDERS[id].defModel), fast: store.get(PFX[id] + ".fast", PROVIDERS[id].defFast) };
@@ -617,7 +649,6 @@ function parseJSON(t) {
 }
 function httpError(status, msg, code) {
   const m = msg || "", c = code || "";
-  if (c === "insufficient_quota" || /insufficient_quota|exceeded your current quota|billing/i.test(m)) return { code: "no_credit", message: m };
   if (/unsupported_country|location|region|country/i.test(c + " " + m)) return { code: "region", message: m };
   if (status === 429) return { code: "rate_limited", message: m };
   if (status === 404 || c === "model_not_found" || /model .*(does not exist|not found)|do not have access to the model/i.test(m)) return { code: "model_not_found", message: m };
@@ -639,7 +670,6 @@ async function post(url, headers, body, signal) {
 }
 async function callGemini(c, model, kind, prompt, opts) {
   const parts = [{ text: prompt }];
-  for (const img of opts.images || []) parts.push({ inline_data: { mime_type: img.mime, data: img.data } });
   const body = { contents: [{ role: "user", parts }], generationConfig: { temperature: kind === "json" ? 0.4 : 0.1 } };
   if (kind === "json") body.generationConfig.responseMimeType = "application/json";
   const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { "x-goog-api-key": c.key }, body, opts.signal);
@@ -649,33 +679,11 @@ async function callGemini(c, model, kind, prompt, opts) {
   if (!text) throw { code: /SAFETY|BLOCK|PROHIBITED/.test(cand.finishReason || "") ? "refused" : "empty_completion" };
   return { text, truncated: cand.finishReason === "MAX_TOKENS" };
 }
-async function callOpenAI(c, model, kind, prompt, opts) {
-  const content = [{ type: "input_text", text: prompt }];
-  for (const img of opts.images || []) content.push({ type: "input_image", image_url: `data:${img.mime};base64,${img.data}` });
-  const body = { model, input: [{ role: "user", content }] };
-  if (kind === "json") body.text = { format: { type: "json_object" } };
-  const data = await post("https://api.openai.com/v1/responses", { "Authorization": "Bearer " + c.key }, body, opts.signal);
-  let text = typeof data.output_text === "string" ? data.output_text : "";
-  let refused = false;
-  if (!text) {
-    for (const item of data.output || []) {
-      if (item.type !== "message") continue;
-      for (const part of item.content || []) {
-        if (part.type === "output_text" && typeof part.text === "string") text += part.text;
-        if (part.type === "refusal") refused = true;
-      }
-    }
-  }
-  text = text.trim();
-  const why = data.incomplete_details && data.incomplete_details.reason;
-  if (!text) throw { code: refused || why === "content_filter" ? "refused" : "empty_completion" };
-  return { text, truncated: data.status === "incomplete" && why === "max_output_tokens" };
-}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function ask(kind, prompt, opts = {}) {
   const c = cur();
   if (!c.key) throw { code: "no_key" };
-  const call = cfg.provider === "openai" ? callOpenAI : callGemini;
+  const call = callGemini;
   const first = opts.modelTier === "quick" ? c.fast : c.model;
   let out;
   try { out = await call(c, first, kind, prompt, opts); }
@@ -699,12 +707,6 @@ async function getJSON(url, headers) {
   return data || {};
 }
 async function listModels(provider, key) {
-  if (provider === "openai") {
-    const data = await getJSON("https://api.openai.com/v1/models", { "Authorization": "Bearer " + key });
-    return (data.data || []).map(m => String(m.id || ""))
-      .filter(n => /^(gpt|o\d|chatgpt)/.test(n) && !/audio|realtime|tts|transcribe|image|embedding|search|moderation|instruct|codex/.test(n))
-      .sort();
-  }
   const data = await getJSON("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { "x-goog-api-key": key });
   return (data.models || [])
     .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
@@ -714,7 +716,6 @@ async function listModels(provider, key) {
 const ERR_COPY = {
   no_key: "Falta tu clave de API. Pégala en Einstellungen (pantalla de inicio).",
   bad_key: "La clave fue rechazada. Revisa que esté bien copiada y que corresponda al proveedor elegido.",
-  no_credit: "Tu cuenta de OpenAI no tiene saldo. Añade crédito en platform.openai.com → Billing.",
   model_not_found: "Ese modelo no existe o tu clave no tiene acceso. Elige otro en Einstellungen.",
   region: "El servicio no está disponible desde tu ubicación con esta clave.",
   rate_limited: "Límite de uso alcanzado. Espera un minuto y vuelve a intentarlo.",
@@ -725,7 +726,7 @@ const ERR_COPY = {
   invalid_json: "La respuesta llegó con formato incorrecto. Pulsa «Nochmal».",
   empty_completion: "Llegó una respuesta vacía. Pulsa «Nochmal»."
 };
-const FATAL = new Set(["no_key", "bad_key", "no_credit", "model_not_found", "region"]);
+const FATAL = new Set(["no_key", "bad_key", "model_not_found", "region"]);
 const errText = e => ERR_COPY[e && e.code] || "No se pudo conectar. Pulsa «Nochmal».";
 const openSettings = () => { location.hash = "home"; setTimeout(() => { const k = $("#gk"); if (k) { k.scrollIntoView({ block: "center" }); k.focus(); } }, 80); };
 function errBox(e, retry) {
@@ -740,40 +741,31 @@ function errBox(e, retry) {
 }
 
 /* ---------- prompts ---------- */
-const OCR_PROMPT = (first, count) => `${count === 1 ? "La imagen es una foto de una página" : `Las ${count} imágenes son fotos de páginas`} de un libro en alemán${count > 1 ? ", en orden" : ""}.
-Transcribe el texto alemán exactamente como aparece: misma ortografía, mayúsculas, puntuación y comillas (»…«, „…“).
-- Une las palabras cortadas con guion al final de línea.
-- Une las líneas de un mismo párrafo en una sola línea y separa los párrafos con una línea vacía.
-- Omite números de página, encabezados o pies de página repetidos y todo lo que no sea el texto del libro.
-- Antes del texto de cada imagen escribe una línea así: ===SEITE n=== (la primera es la ${first}).
-- Si una parte es ilegible, escribe [unleserlich].
-Responde solo con la transcripción, sin comentarios.`;
+const UEB_PROMPT = (t, dir) => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel ${lvl()}) quiere traducir y entender esto:
 
-function LESE_PROMPT(text, q, forced) {
-  return `Eres un profesor de alemán muy preciso. Tu alumno es hispanohablante (nivel ${lvl()}) y está leyendo este libro:
+«${t}»
 
-<texto>
-${text}
-</texto>
+${dir === "de" ? "El texto está en alemán: tradúcelo al español."
+  : dir === "es" ? "El texto está en español: tradúcelo al alemán como lo diría un nativo (du o Sie según el contexto; si no está claro, du)."
+  : "Detecta el idioma. Si está en alemán, tradúcelo al español. Si está en español (u otro idioma), tradúcelo al alemán como lo diría un nativo (du o Sie según el contexto; si no está claro, du)."}
 
-${forced
-  ? `Analiza exactamente esta oración del texto: «${forced}». El alumno buscaba: «${q}».`
-  : `El alumno busca: «${q}». Encuéntralo en el texto. Acepta formas flexionadas o conjugadas, verbos separables separados (como «fängt … an») y pequeñas diferencias de mayúsculas o de lectura. Elige la oración completa donde aparece (la primera aparición).`}
+El objetivo es que el alumno reconozca las estructuras clave del alemán de esta frase y aprenda a reutilizarlas.
 
 Responde SOLO con JSON:
-{"found": true,
- "sentence": "la oración completa en alemán, tal cual está en el texto",
- "translation": "traducción al español natural y en contexto",
- "breakdown": [{"de": "palabra o grupo de palabras", "es": "significado en esta oración", "func": "función gramatical (caso, género, tiempo, régimen, expresión fija…)", "focus": false}],
- "function": "1–2 frases: qué papel cumple «${q}» en la oración",
- "others": ["otras oraciones completas del texto donde también aparece (máx. 4)"]}
-Si no aparece en el texto: {"found": false, "suggestions": ["hasta 5 palabras o expresiones del texto que se parezcan"]}
+{"source": "de" | "es",
+ "german": "la frase en alemán: el original si el texto estaba en alemán (corrigiendo solo erratas evidentes); si no, tu traducción",
+ "spanish": "traducción al español natural y en contexto (o el original si estaba en español)",
+ "literal": "traducción palabra por palabra al español respetando el orden alemán, para ver cómo está construida la frase",
+ "structures": [{"name": "nombre corto de la estructura", "pattern": "fórmula breve, p. ej. «haben + … + Partizip II»", "parts": ["fragmentos exactos de german que forman la estructura, en orden"], "explain": "qué es y cuándo se usa, máx. 25 palabras", "examples": [{"de": "frase de ejemplo", "es": "su traducción"}]}],
+ "vocab": [{"de": "palabra clave (sustantivos con artículo, verbos en infinitivo)", "info": "plural, Partizip II o régimen (p. ej. «Pl. -e», «hat getroffen», «+ Akk.»), o vacío", "es": "significado aquí"}],
+ "note": "un matiz importante de uso, registro o región en 1 frase, o vacío"}
 
 Reglas:
-- breakdown recorre la oración en orden y agrupa como lo haría un buen profesor (artículo + sustantivo, verbo + partícula, expresiones fijas). En oraciones largas agrupa más: máximo 10 elementos.
-- "focus": true solo en el elemento que contiene lo buscado.
-- "es" y "func" muy breves (máx. 15 palabras cada uno). Precisión ante todo; si algo es ambiguo, dilo.${forced ? '\n- "others": [].' : ""}`;
-}
+- structures: de 2 a 4, las más útiles para nivel ${lvl()}, ordenadas por importancia. Piensa en: posición del verbo (V2, verbo al final en subordinadas, Satzklammer), tiempos (Perfekt, Präteritum, Futur), verbos modales, verbos separables, reflexivos, verbos con preposición fija, casos tras preposiciones, Konjunktiv II, pasiva, zu + Infinitiv, um … zu, oraciones de relativo, comparativos, expresiones fijas o idiomáticas.
+- parts: copia los fragmentos tal cual aparecen en "german". Una estructura discontinua tiene varios fragmentos, p. ej. ["habe", "getroffen"].
+- examples: exactamente 2 por estructura: frases nuevas (no la del alumno), cortas, naturales y del día a día, de nivel ${lvl()}, con la misma estructura.
+- vocab: máximo 5 palabras realmente útiles; no incluyas palabras muy básicas para nivel ${lvl()}.
+- Explicaciones en español y muy breves. Precisión ante todo. Si la frase alemana original tiene un error o suena poco natural, dilo en "note".`;
 
 const SATZ_PROMPT = t => `Eres un profesor de alemán muy preciso. Tu alumno (hispanohablante, nivel ${lvl()}) escribió esta frase en alemán:
 
@@ -810,7 +802,7 @@ Reglas: breakdown recorre "german" en orden y agrupa como un buen profesor (máx
 
 /* ---------- modules ---------- */
 const MODS = [
-  { id: "lese", name: "Lesefreund", c: "var(--yellow)", on: "var(--on-yellow)", de: "Foto vom Buch, Wort eingeben, Satz verstehen.", es: "Fotografía tu libro y entiende cada oración." },
+  { id: "ueber", name: "Übersetzer", c: "var(--yellow)", on: "var(--on-yellow)", de: "Übersetzen und Strukturen erkennen.", es: "Traduce frases y descubre sus estructuras clave." },
   { id: "satz", name: "Satzdoktor", c: "var(--green)", on: "var(--on-dark)", de: "Schreib einen Satz. Ich korrigiere ihn.", es: "Escribe en alemán y te digo si está bien." },
   { id: "sag", name: "Sag's auf Deutsch!", c: "var(--red)", on: "var(--on-dark)", de: "Auf Spanisch denken, auf Deutsch sagen.", es: "Escribe en español y aprende cómo se dice." },
   { id: "kaffee", name: "Kaffeeklatsch", c: "var(--blue)", on: "var(--on-dark)", de: "Plaudern wie im Café.", es: "Conversa en alemán con correcciones breves." }
@@ -866,7 +858,7 @@ function breakdownEl(items) {
   const ul = h("ul", { class: "bd" });
   for (const it of arr(items)) {
     const de = str(it && it.de); if (!de) continue;
-    const f = h("button", { class: "frag" + (it.focus === true ? " focus" : ""), type: "button", title: "Anhören" }, de);
+    const f = h("button", { class: "frag", type: "button", title: "Anhören" }, de);
     f.addEventListener("click", () => speak(de, f));
     const es = noDot(str(it.es)), fn = noDot(str(it.func));
     ul.append(h("li", null, f, " → ", es, fn ? h("span", { class: "func" }, (es ? ". " : "") + fn + ".") : (es ? "." : "")));
@@ -892,6 +884,9 @@ function initHome() {
   });
   const nameIn = h("input", { id: "nm", type: "text", value: settings.name, autocomplete: "given-name" });
   nameIn.addEventListener("change", () => { settings.name = nameIn.value.trim() || "Axel"; nameIn.value = settings.name; store.set("name", settings.name); renderHello(); });
+  const aboutIn = h("textarea", { id: "ab", rows: "3", maxlength: "400", placeholder: "z. B. Ich komme aus Peru, studiere … und mag …" });
+  aboutIn.value = settings.about;
+  aboutIn.addEventListener("change", () => { settings.about = aboutIn.value.trim(); aboutIn.value = settings.about; store.set("about", settings.about); });
   const segBtns = [["Normal", false], ["Langsam", true]].map(([t, v]) => {
     const b = h("button", { type: "button", "aria-pressed": String(settings.slow === v) }, t);
     b.addEventListener("click", () => { settings.slow = v; store.set("slow", v); segBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); speak("Hallo! So klingt das Sprechtempo.", b); });
@@ -899,11 +894,6 @@ function initHome() {
   });
   const provBox = h("div", { class: "settings", style: "margin:0;padding:0;border:0" });
   const dl = h("datalist", { id: "ai-models" });
-  const provBtns = Object.keys(PROVIDERS).map(id => {
-    const b = h("button", { type: "button", "aria-pressed": String(cfg.provider === id) }, PROVIDERS[id].label);
-    b.addEventListener("click", () => { cfg.provider = id; store.set("prov", id); provBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); dl.replaceChildren(); renderProv(); banner.hidden = !!cur().key; });
-    return b;
-  });
   function renderProv() {
     const id = cfg.provider, P = PROVIDERS[id], c = cfg[id];
     const keyIn = h("input", { id: "gk", type: "password", value: c.key, placeholder: P.keyHint, autocomplete: "off", spellcheck: "false" });
@@ -935,7 +925,7 @@ function initHome() {
     provBox.replaceChildren(
       h("div", { class: "field stack" }, h("label", { for: "gk" }, `${P.label} API-Schlüssel`), h("div", { class: "keyrow" }, keyIn, eye),
         h("p", { class: "note" }, P.note + " Clave en ", h("a", { href: P.keyUrl, target: "_blank", rel: "noopener" }, P.keyUrlText), ". Se guarda solo en este dispositivo.")),
-      h("div", { class: "field stack" }, h("label", { for: "gm" }, "Modell (Lesefreund, Satzdoktor, Sag's)"), modelIn),
+      h("div", { class: "field stack" }, h("label", { for: "gm" }, "Modell (Übersetzer, Satzdoktor, Sag's)"), modelIn),
       h("div", { class: "field stack" }, h("label", { for: "gf" }, "Schnelles Modell (Kaffeeklatsch)"), fastIn, dl),
       h("div", { class: "field" }, test), status);
   }
@@ -974,6 +964,8 @@ function initHome() {
       h("h2", { text: "Einstellungen" }),
       provBox,
       h("div", { class: "field" }, h("label", { for: "nm" }, "Dein Name"), nameIn),
+      h("div", { class: "field stack" }, h("label", { for: "ab" }, "Über mich (für Kaffeeklatsch)"), aboutIn,
+        h("p", { class: "note", text: "Escribe en español o en alemán algo sobre ti: de dónde eres, qué haces, qué te gusta. Las chicas de Kaffeeklatsch lo leen como si fuera tu perfil y te preguntan por ello." })),
       h("div", { class: "field" }, h("span", null, "Dein Niveau"), h("div", { class: "seg", role: "group", "aria-label": "Niveau" }, lvlBtns)),
       h("div", { class: "field" }, h("span", null, "Sprechtempo"), h("div", { class: "seg", role: "group", "aria-label": "Sprechtempo" }, segBtns)),
       voiceBox,
@@ -981,137 +973,117 @@ function initHome() {
   );
 }
 
-/* ---------- A: Lesefreund ---------- */
-function readAsDataURL(file) {
-  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file); });
+/* ---------- A: Übersetzer ---------- */
+function fragBtn(text) {
+  const f = h("button", { class: "frag", type: "button", title: "Anhören" }, text);
+  f.addEventListener("click", () => speak(text, f));
+  return f;
 }
-async function prepImage(file) {
-  const url = await readAsDataURL(file);
-  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("decode")); i.src = url; });
-  const k = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
-  const c = document.createElement("canvas");
-  c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  const out = c.toDataURL("image/jpeg", 0.88);
-  return { mime: "image/jpeg", data: out.split(",")[1], url: out };
+// Marks the words of each structure inside the German sentence (colour + number per structure).
+function markStructures(de, sts) {
+  const toks = de.split(/\s+/).filter(Boolean);
+  const key = t => normTok(t).toLowerCase();
+  const owner = new Array(toks.length).fill(-1), ends = {};
+  sts.forEach((s, i) => {
+    let from = 0, last = -1;
+    const parts = arr(s.parts).map(str).flatMap(p => p.split(/\s*(?:…|\.\.\.)\s*/)).filter(Boolean);
+    for (const p of parts) {
+      const pt = p.split(/\s+/).map(key).filter(Boolean);
+      if (!pt.length) continue;
+      const fits = k => pt.every((w, j) => k + j < toks.length && owner[k + j] === -1 && key(toks[k + j]) === w);
+      let k = -1;
+      for (let x = from; x <= toks.length - pt.length && k < 0; x++) if (fits(x)) k = x;
+      for (let x = 0; x < from && k < 0; x++) if (fits(x)) k = x;
+      if (k < 0) continue;
+      for (let j = 0; j < pt.length; j++) owner[k + j] = i;
+      from = k + pt.length; last = Math.max(last, k + pt.length - 1);
+    }
+    if (last >= 0) (ends[last] = ends[last] || []).push(i);
+  });
+  const out = h("span");
+  let k = 0;
+  while (k < toks.length) {
+    if (k) out.append(" ");
+    const o = owner[k];
+    let e = k;
+    while (o >= 0 && e + 1 < toks.length && owner[e + 1] === o && !ends[e]) e++;
+    const txt = toks.slice(k, e + 1).join(" ");
+    const tail = o >= 0 ? (txt.match(/[.,!?;:»«„“"')]+$/) || [""])[0] : "";
+    out.append(o >= 0 ? h("mark", { class: "sm st-" + o }, txt.slice(0, txt.length - tail.length)) : txt);
+    for (const i of ends[e] || []) out.append(h("sup", { class: "sn st-" + i, text: String(i + 1) }));
+    if (tail) out.append(tail);
+    k = e + 1;
+  }
+  return out;
 }
-function initLese() {
+function initUeber() {
   const mod = MODS[0];
-  const { sec, feed } = buildScreen(mod, "Sube fotos de tu libro, escribe una palabra y entiende la oración.");
-  const state = { text: store.get("lese.text", ""), pages: store.get("lese.pages", 0), lastErr: null };
-  const save = () => { store.set("lese.text", state.text); store.set("lese.pages", state.pages); };
-  const panel = h("div", { class: "pages" });
-  sec.insertBefore(panel, feed);
-  const file = h("input", { type: "file", accept: "image/*", multiple: true, hidden: true });
-  file.addEventListener("change", () => { const fs = [...file.files]; file.value = ""; if (fs.length) transcribe(fs); });
-  sec.append(file);
-  const comp = makeComposer(sec, { placeholder: "Wort oder Ausdruck eingeben…", onSend: q => lookup(q), autocorrect: false });
-  let showText = false, results = 0;
-
-  function renderEmpty() {
-    if (results) return;
-    feed.replaceChildren(state.text
-      ? emptyEl("Welches Wort suchst du?", "Escribe una palabra o frase que veas en la página.")
-      : emptyEl("Noch keine Seiten.", "Sube una o varias fotos de tu libro para empezar."));
-  }
-  function renderPanel(progress) {
-    panel.replaceChildren();
-    if (progress) {
-      panel.append(h("div", { class: "thumbs" }, progress.urls.map(u => h("img", { src: u, alt: "" }))), progress.node);
-      comp.setDisabled(true); return;
-    }
-    if (!state.text) {
-      const drop = h("button", { class: "drop", type: "button", onclick: () => file.click() },
-        h("strong", { text: "Fotos vom Buch hochladen" }), h("span", { text: "Sube una o varias fotos de las páginas" }));
-      panel.append(drop);
-    } else {
-      const ocr = h("div", { class: "ocrtext", hidden: !showText, text: state.text });
-      const tBtn = h("button", { class: "ghost", type: "button" }, showText ? "Text ausblenden" : "Text ansehen");
-      tBtn.addEventListener("click", () => { showText = !showText; renderPanel(); });
-      panel.append(
-        h("div", { class: "pstat" },
-          h("span", { class: "ready", text: `${state.pages} ${state.pages === 1 ? "Seite" : "Seiten"} bereit` }),
-          tBtn,
-          h("button", { class: "ghost", type: "button", onclick: () => file.click() }, "+ Fotos"),
-          h("button", { class: "ghost", type: "button", onclick: () => { if (confirm("¿Empezar con páginas nuevas? Se borra el texto actual.")) { state.text = ""; state.pages = 0; save(); results = 0; showText = false; renderPanel(); renderEmpty(); } } }, "Neu")),
-        ocr);
-    }
-    if (state.lastErr) panel.append(errBox(state.lastErr));
-    comp.setDisabled(!state.text);
-  }
-
-  async function transcribe(files) {
-    state.lastErr = null;
-    if (!cur().key) { state.lastErr = { code: "no_key" }; renderPanel(); return; }
-    const prepared = [];
-    for (const f of files) {
-      try { prepared.push(await prepImage(f)); }
-      catch { toast(`No se pudo abrir «${f.name}». Prueba con JPG o PNG.`); }
-    }
-    if (!prepared.length) return;
-    const urls = prepared.map(p => p.url);
-    const max = 3;
-    const label = h("span");
-    const node = thinking(""); node.prepend(label);
-    const signal = comp.start();
-    try {
-      for (let i = 0; i < prepared.length; i += max) {
-        const batch = prepared.slice(i, i + max);
-        const a = state.pages + 1, b = state.pages + batch.length;
-        label.textContent = a === b ? `Lese Seite ${a}` : `Lese Seiten ${a}–${b}`;
-        renderPanel({ urls, node });
-        const res = await ask("text", OCR_PROMPT(a, batch.length), { images: batch, signal });
-        state.text = (state.text + "\n\n" + res.text.trim()).trim();
-        state.pages = b; save();
-      }
-    } catch (e) {
-      state.lastErr = e && e.code === "cancelled" ? null : e;
-    } finally {
-      comp.end(); renderPanel(); renderEmpty();
-      if (state.text && !state.lastErr) comp.ta.focus();
-    }
-  }
-
-  function lookup(q, forced) {
-    if (!results) feed.replaceChildren();
-    results++;
+  const { sec, feed } = buildScreen(mod, "Traduce frases y aprende sus estructuras clave con ejemplos.");
+  let dir = store.get("ueb.dir", "auto");
+  if (!["auto", "de", "es"].includes(dir)) dir = "auto";
+  const dirBtns = [["auto", "Auto"], ["de", "DE → ES"], ["es", "ES → DE"]].map(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(dir === v) }, t);
+    b.addEventListener("click", () => { dir = v; store.set("ueb.dir", v); dirBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+    return b;
+  });
+  sec.append(h("div", { class: "strip" }, "Richtung", h("div", { class: "seg", role: "group", "aria-label": "Richtung" }, dirBtns)));
+  const comp = makeComposer(sec, { placeholder: "Satz oder Ausdruck eingeben…", onSend: t => translate(t), autocorrect: false });
+  let count = 0;
+  feed.append(emptyEl("Was möchtest du übersetzen?", "Escribe una frase en alemán o en español. Te doy la traducción, el audio y las estructuras clave con ejemplos."));
+  function translate(t) {
+    if (!count) feed.replaceChildren();
+    count++;
     const body = h("div");
-    const turn = h("div", { class: "turn" }, h("div", { class: "qrow" }, h("div", { class: "qbubble de", text: forced ? `${q} (otra oración)` : q })), body);
+    const qb = h("div", { class: "qbubble" + (dir === "de" ? " de" : ""), text: t });
+    const turn = h("div", { class: "turn" }, h("div", { class: "qrow" }, qb), body);
     feed.append(turn);
+    const d0 = dir;
     const run = async () => {
       body.replaceChildren(thinking()); toEnd(feed);
       const signal = comp.start();
-      try {
-        const d = await ask("json", LESE_PROMPT(state.text, q, forced), { signal });
-        body.replaceChildren(renderResult(d, q, !!forced)); toTop(feed, turn);
-      } catch (e) { body.replaceChildren(errBox(e, run)); toEnd(feed); }
+      try { const d = await ask("json", UEB_PROMPT(t, d0), { signal }); body.replaceChildren(render(d, qb)); toTop(feed, turn); }
+      catch (e) { body.replaceChildren(errBox(e, run)); toEnd(feed); }
       finally { comp.end(); }
     };
     run();
   }
-  function renderResult(d, q, forced) {
+  function render(d, qb) {
     const w = h("div");
-    if (!d || d.found === false || !str(d.sentence)) {
-      w.append(h("p", { class: "line", text: `«${q}» no aparece en el texto.` }));
-      const sug = arr(d && d.suggestions).map(str).filter(Boolean);
-      if (sug.length) w.append(h("p", { class: "line muted small", text: "¿Quizás buscabas…?" }),
-        h("div", { class: "chips" }, sug.map(s => h("button", { class: "chip", type: "button", onclick: () => { if (!comp.busy) lookup(s); } }, s))));
-      return w;
+    const de = str(d && d.german);
+    if (!de) { w.append(errBox({ code: "invalid_json" })); return w; }
+    const fromDe = d.source === "de";
+    qb.classList.toggle("de", fromDe);
+    prefetchSpeech(de);
+    const sts = arr(d.structures).filter(s => s && str(s.name)).slice(0, 4);
+    w.append(h("p", { class: "line" }, h("span", { class: "de-big" }, markStructures(de, sts)), " ", sayBtn(de)));
+    const es = str(d.spanish);
+    if (fromDe && es) w.append(lineEl("Traducción:", es));
+    const lit = str(d.literal);
+    if (lit && lit.toLowerCase() !== "vacío") w.append(lineEl("Palabra por palabra:", lit, "lit"));
+    if (sts.length) {
+      w.append(h("p", { class: "sect", text: "Estructuras clave" }));
+      sts.forEach((s, i) => {
+        const card = h("div", { class: "st st-" + i },
+          h("div", { class: "st-h" }, h("span", { class: "sn st-" + i, text: String(i + 1) }), str(s.name)));
+        if (str(s.pattern)) card.append(h("div", { class: "pat", text: str(s.pattern) }));
+        if (str(s.explain)) card.append(h("p", { class: "st-x", text: str(s.explain) }));
+        const ex = arr(s.examples).filter(e => e && str(e.de)).slice(0, 3);
+        if (ex.length) card.append(h("ul", { class: "ex" }, ex.map(e => h("li", null, fragBtn(str(e.de)), str(e.es) ? h("span", { class: "func" }, " — " + str(e.es)) : null))));
+        w.append(card);
+      });
     }
-    const sent = str(d.sentence);
-    prefetchSpeech(sent);
-    w.append(h("p", { class: "line" }, h("span", { class: "lbl" }, "Oración: "), h("span", { class: "de-text" }, sent), " ", sayBtn(sent)));
-    if (str(d.translation)) w.append(lineEl("Traducción:", str(d.translation)));
-    w.append(breakdownEl(d.breakdown));
-    if (str(d.function)) w.append(lineEl("Función:", str(d.function)));
-    const others = forced ? [] : arr(d.others).map(str).filter(o => o && o !== sent);
-    if (others.length) {
-      w.append(h("p", { class: "line muted small", style: "margin-top:12px", text: "También aparece en:" }),
-        h("div", { class: "others" }, others.map(o => h("button", { class: "other", type: "button", onclick: () => { if (!comp.busy) lookup(q, o); } }, o))));
+    const voc = arr(d.vocab).filter(v => v && str(v.de)).slice(0, 5);
+    if (voc.length) {
+      w.append(h("p", { class: "sect", text: "Vocabulario" }));
+      w.append(h("ul", { class: "bd" }, voc.map(v => {
+        const info = str(v.info), es2 = noDot(str(v.es));
+        return h("li", null, fragBtn(str(v.de)), info && info.toLowerCase() !== "vacío" ? h("span", { class: "func" }, " (" + info + ")") : null, es2 ? " → " + es2 + "." : null);
+      })));
     }
+    const note = str(d.note);
+    if (note && note.toLowerCase() !== "vacío") w.append(h("p", { class: "tip" }, h("span", { class: "lbl" }, "Nota: "), note));
     return w;
   }
-  renderPanel(); renderEmpty();
 }
 
 /* ---------- B: Satzdoktor ---------- */
@@ -1229,7 +1201,41 @@ function initSag() {
 
 /* ---------- D: Kaffeeklatsch ---------- */
 const NAMES = ["Lena", "Mia", "Hannah", "Emma", "Sophie", "Lea", "Marie", "Anna", "Clara", "Johanna", "Leonie", "Paula", "Greta", "Ida", "Frieda", "Mila", "Jana", "Katharina", "Luisa", "Nele", "Antonia", "Charlotte", "Julia", "Theresa", "Franziska", "Svenja", "Miriam", "Carla", "Lotte", "Merle", "Valentina", "Magdalena"];
-const CITIES = ["Wien", "Graz", "Salzburg", "Innsbruck", "Linz", "Klagenfurt", "München", "Berlin", "Hamburg", "Köln", "Leipzig", "Dresden", "Freiburg", "Heidelberg", "Bremen", "Zürich", "Bern"];
+// How she talks, depending on where she lives (instructions for the model, in Spanish).
+const REGIONS = {
+  at: "Eres austríaca: usa de vez en cuando palabras austríacas fáciles (Servus, Grüß dich, heuer, Jause, Sackerl, Paradeiser, Erdäpfel, Topfen, a bissl, gell?). Nunca el «Moin» del norte.",
+  wien: "Eres de Viena: usa de vez en cuando palabras austríacas y vienesas fáciles (Servus, leiwand = genial, ur- = muy, Bim = tranvía, Beisl = bar, Jause, Sackerl, heuer, a bissl; «Oida» solo en broma).",
+  bay: "Eres de Múnich: usa de vez en cuando palabras bávaras fáciles (Servus, Grüß Gott, gell?, a bissl, fei, Semmel, Brotzeit, Biergarten).",
+  berlin: "Eres de Berlín: tono directo y algo seco (Berliner Schnauze); usa de vez en cuando «Na?» como saludo, «wa?» al final de una frase, Schrippe, Späti, Kiez.",
+  nord: "Eres del norte de Alemania: saluda con «Moin», tono tranquilo y seco; usa de vez en cuando schnacken (charlar), Schietwetter, «Digga» solo en broma.",
+  koeln: "Eres de Colonia: alegre y abierta; usa de vez en cuando Veedel (barrio), Kölsch, jeck (loco, carnaval), Alaaf y el refrán «Et hätt noch immer jot jejange».",
+  sachsen: "Eres de Sajonia: usa de vez en cuando «nu» (sí), Bemme (rebanada de pan con algo) y, en broma, «ni» en vez de «nicht».",
+  baden: "Eres de Baden (suroeste de Alemania): usa de vez en cuando «Ade» o «Tschüssle», diminutivos en -le (Häusle, Viertele), «gell?», Weckle (panecillo).",
+  ch: "Eres suiza: escribe alemán estándar de Suiza, SIEMPRE sin «ß» (Strasse, gross, heisst). Saluda con «Grüezi», «Hoi» o «Sali» y usa de vez en cuando Merci, Velo (bici), parkieren, grillieren, «En Guete», Znüni. Nunca escribas en dialecto suizo."
+};
+const CITIES = [
+  ["Wien", "Europe/Vienna", "wien"], ["Graz", "Europe/Vienna", "at"], ["Salzburg", "Europe/Vienna", "at"], ["Innsbruck", "Europe/Vienna", "at"],
+  ["Linz", "Europe/Vienna", "at"], ["Klagenfurt", "Europe/Vienna", "at"], ["München", "Europe/Berlin", "bay"], ["Berlin", "Europe/Berlin", "berlin"],
+  ["Hamburg", "Europe/Berlin", "nord"], ["Bremen", "Europe/Berlin", "nord"], ["Köln", "Europe/Berlin", "koeln"], ["Leipzig", "Europe/Berlin", "sachsen"],
+  ["Dresden", "Europe/Berlin", "sachsen"], ["Freiburg", "Europe/Berlin", "baden"], ["Heidelberg", "Europe/Berlin", "baden"],
+  ["Zürich", "Europe/Zurich", "ch"], ["Bern", "Europe/Zurich", "ch"]
+].map(([n, tz, r]) => ({ n, tz, r }));
+const cityInfo = n => CITIES.find(c => c.n === n) || CITIES[0];
+// Seeds for her life (the model builds a concrete, coherent profile from them).
+const JOBS = ["studiert Medizin", "studiert Architektur", "studiert Lehramt (Deutsch und Sport)", "studiert Psychologie", "studiert Jura", "studiert Informatik",
+  "studiert Umweltingenieurwesen", "studiert Schauspiel", "macht eine Ausbildung zur Physiotherapeutin", "ist Krankenpflegerin", "ist Erzieherin in einer Kita",
+  "ist Grundschullehrerin", "arbeitet als Barista und studiert nebenbei Musik", "ist Grafikdesignerin in einer Agentur", "ist Softwareentwicklerin",
+  "ist Tierärztin in Ausbildung", "ist Köchin in einem Restaurant", "schreibt ihre Doktorarbeit in Biologie", "ist Hebamme", "ist Journalistin bei einer Lokalzeitung",
+  "ist Tischlerin", "ist Flugbegleiterin", "arbeitet im Marketing eines Start-ups", "ist Polizistin", "ist Bankkauffrau", "ist Fotografin und kellnert nebenbei",
+  "ist Mechatronikerin", "ist Floristin"];
+const NOWS = ["hat diese Woche Prüfungen", "ist gerade in eine neue WG gezogen", "hat letzte Woche einen neuen Job angefangen", "ist gerade aus dem Urlaub zurück",
+  "hat sich einen Hund aus dem Tierheim geholt", "trainiert für einen Halbmarathon", "plant eine Reise nach Südamerika", "renoviert gerade ihr Zimmer",
+  "hat Stress mit ihrer Mitbewohnerin", "schreibt an ihrer Abschlussarbeit", "lernt gerade Gitarre", "hat am Wochenende Geburtstag",
+  "ist frisch getrennt und genießt das Single-Leben", "hat gerade einen Kochkurs angefangen", "organisiert die Geburtstagsparty ihrer besten Freundin",
+  "überlegt, ein Jahr ins Ausland zu gehen", "ist erkältet und liegt auf dem Sofa", "hat gerade Konzertkarten ergattert", "spart für ihr erstes eigenes Auto",
+  "hat eine neue Serie entdeckt und schaut viel zu viel"];
+// Each girl keeps her own natural (Gemini) voice.
+const GIRL_VOICES = ["Kore", "Aoede", "Leda", "Sulafat", "Zephyr", "Despina", "Callirrhoe", "Autonoe"];
 const TOPICS = ["Freies Thema", "Überrasch mich!", "Alltag", "Uni & Studium", "Reisen", "Essen & Kochen", "Hobbys & Freizeit", "Arbeit & Karriere",
   "Musik & Konzerte", "Filme & Serien", "Sport & Fitness", "Ausgehen & Feiern", "Liebe & Dating", "Familie & Freunde", "Wohnen & WG",
   "Natur & Wandern", "Technik & Handys", "Wissenschaft", "Umwelt & Klima", "Kindheit & Erinnerungen", "Zukunftspläne & Träume", "Kurioses & Fun Facts"];
@@ -1246,19 +1252,75 @@ const PERSONAS = [
     desc: "Eres una sabelotodo: crees saberlo todo, corriges datos con «Eigentlich…» o «Na ja, genau genommen…», sueltas datos curiosos aunque nadie los pida y eres un poco condescendiente, aunque en el fondo simpática." },
   { id: "zufall", label: "Zufällig", emoji: "🎲", desc: "" }
 ];
+// Chat style by level.
+const STYLE = {
+  A2: "Escribe frases muy sencillas y claras. Pocas partículas (mal, doch) y casi ninguna abreviatura de chat.",
+  B1: "Escribe como en un chat real: algunas partículas modales (halt, mal, doch, eben, ja), contracciones habituales (hab, gibt's, 'nen, ne?) y de vez en cuando una abreviatura (vllt, lol).",
+  B2: "Escribe como una nativa en el chat: partículas modales con naturalidad, contracciones, muletillas (naja, krass, echt?, ach so) y abreviaturas de chat (vllt, kp, lol, omg)."
+};
+const VN_RATE = { off: 0, some: 0.25, often: 0.5 };
 const pick = a => a[Math.floor(Math.random() * a.length)];
+const hashStr = s => { let x = 7; for (const ch of String(s)) x = (Math.imul(x, 31) + ch.codePointAt(0)) >>> 0; return x; };
+const AVA = [["var(--yellow)", "var(--on-yellow)"], ["var(--green)", "var(--on-dark)"], ["var(--red)", "var(--on-dark)"], ["var(--blue)", "var(--on-dark)"]];
+function avatar(c) {
+  const [bg, on] = AVA[hashStr(c.id || c.name) % AVA.length];
+  const a = h("span", { class: "ava", "aria-hidden": "true", text: c.name.charAt(0) });
+  a.style.setProperty("--ac", bg); a.style.setProperty("--aon", on);
+  return a;
+}
+const herClock = (c, opts) => new Intl.DateTimeFormat("de-DE", { timeZone: cityInfo(c.city).tz, ...opts }).format(new Date());
+function agoDe(t) {
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 2) return "gerade eben";
+  if (m < 60) return `vor ${m} Min.`;
+  const hh = Math.round(m / 60);
+  if (hh < 24) return `vor ${hh} Std.`;
+  const d = Math.round(hh / 24);
+  return d === 1 ? "gestern" : `vor ${d} Tagen`;
+}
+function agoEs(t) {
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 60) return `${m} minutos`;
+  const hh = Math.round(m / 60);
+  return hh < 48 ? `${hh} horas` : `${Math.round(hh / 24)} días`;
+}
+const sleepFor = (ms, signal) => new Promise((res, rej) => {
+  if (signal && signal.aborted) { rej({ code: "cancelled" }); return; }
+  const t = setTimeout(res, ms);
+  if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej({ code: "cancelled" }); }, { once: true });
+});
+async function wavSeconds(blob) {
+  try { const dv = new DataView(await blob.slice(0, 44).arrayBuffer()); return (blob.size - 44) / ((dv.getUint32(24, true) || 24000) * 2); }
+  catch { return 0; }
+}
+const fmtDur = s => { const r = Math.max(1, Math.round(s)); return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}`; };
+function waveEl(text) {
+  let x = hashStr(text) || 1;
+  const w = h("span", { class: "wave", "aria-hidden": "true" });
+  for (let i = 0; i < 26; i++) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const bar = h("i"); bar.style.height = (25 + (x >>> 8) % 75) + "%"; w.append(bar); }
+  return w;
+}
+// Contacts: every girl is saved on this device, so a chat can be continued later and she remembers it.
+const loadContacts = () => arr(store.get("kk.contacts", [])).filter(c => c && c.id && c.name && Array.isArray(c.msgs));
+function saveContact(c) {
+  c.last = Date.now();
+  const keep = { ...c, msgs: c.msgs.slice(-60).map(({ node, ...m }) => m), notes: arr(c.notes).slice(-15) };
+  store.set("kk.contacts", [keep, ...loadContacts().filter(x => x.id !== c.id)].slice(0, 12));
+}
+const deleteContact = id => store.set("kk.contacts", loadContacts().filter(x => x.id !== id));
 
 function initKaffee() {
   const mod = MODS[3];
   const { sec, feed, tools, subP } = buildScreen(mod, "Conversa en alemán con correcciones breves.");
-  const kk = { name: "", city: "", age: 0, topic: store.get("kk.topic", "Freies Thema"), persona: store.get("kk.persona", "nett"), mood: null, msgs: [], started: false };
+  const kk = { c: null, topic: store.get("kk.topic", "Freies Thema"), persona: store.get("kk.persona", "nett"), vn: store.get("kk.vn", "some"), started: false };
   if (!TOPICS.includes(kk.topic)) kk.topic = "Freies Thema";
   if (!PERSONAS.some(p => p.id === kk.persona)) kk.persona = "nett";
+  if (!(kk.vn in VN_RATE)) kk.vn = "some";
   let auto = store.get("kk.auto", false);
   const autoBtn = h("button", { class: "pill", type: "button", "aria-pressed": String(auto), title: "Leer en voz alta sus respuestas" }, "Vorlesen");
   autoBtn.addEventListener("click", () => { auto = !auto; store.set("kk.auto", auto); autoBtn.setAttribute("aria-pressed", String(auto)); });
-  const newBtn = h("button", { class: "pill", type: "button", hidden: true, onclick: () => renderStart() }, "Neu");
-  tools.append(autoBtn, newBtn);
+  const chatsBtn = h("button", { class: "pill", type: "button", hidden: true, title: "Tus chats y nueva conversación", onclick: () => renderStart() }, "Chats");
+  tools.append(autoBtn, chatsBtn);
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mic = null, rec = null;
@@ -1280,45 +1342,119 @@ function initKaffee() {
     } catch { mic.hidden = true; rec = null; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán."); }
   });
 
-  function prompt() {
-    const u = userName();
-    const opening = kk.msgs.length === 0;
-    const tr = kk.msgs.slice(-30).map(m => `${m.who === "her" ? kk.name : u}: ${m.text}`).join("\n");
-    return `Eres ${kk.name}, ${kk.age} años, de ${kk.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema: ${kk.topicText}.
+  const moodOf = c => PERSONAS.find(p => p.id === c.persona) || PERSONAS[0];
+  let clockTimer = null;
+  const renderSub = () => {
+    const c = kk.c; if (!c) return;
+    const m = moodOf(c);
+    subP.textContent = `Du plauderst mit ${c.name} (${c.age}) aus ${c.city}. ${m.emoji} ${m.label} · 🕒 ${herClock(c, { hour: "2-digit", minute: "2-digit" })} bei ihr`;
+  };
 
-Personalidad: ${kk.mood.desc}
+  function prompt(mode, isVoice) {
+    const c = kk.c, u = userName(), mood = moodOf(c), city = cityInfo(c.city);
+    const tr = c.msgs.slice(-30).map(m => `${m.who === "her" ? c.name : u}: ${m.voice ? "[Sprachnachricht] " : ""}${m.text}`).join("\n");
+    const now = herClock(c, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+    const about = str(settings.about);
+    const notes = arr(c.notes).map(n => "- " + n).join("\n");
+    const p = c.profile;
+    const prof = p ? [p.job, p.home, p.likes, p.now, p.quirk].filter(Boolean).join("; ") : "";
+    const prev = c.msgs[c.msgs.length - 1];
+    const task = mode === "open"
+      ? `- Antes de escribir, inventa tu perfil a partir de estas pistas: ocupación «${c.seeds.job}»; situación actual «${c.seeds.now}». Hazlo concreto y coherente con tu edad y tu ciudad (sitios reales de ${c.city}).
+- Empieza tú la conversación: saluda a ${u} por su nombre, ya con tu personalidad, preséntate en pocas palabras con algo de tu vida y lleva la charla hacia el tema. No uses la frase «Wie geht's?». "fix" es null.`
+      : mode === "return"
+      ? `- Vuestra última conversación fue hace ${agoEs((prev && prev.t) || c.last)}. Retomáis el chat: escribe tú primero, como una persona real que vuelve a escribir (saluda de nuevo, engancha con algo de la última conversación o cuenta qué te ha pasado desde entonces). "fix" es null.`
+      : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`;
+    return `Eres ${c.name}, ${c.age} años, de ${c.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema con el que empezasteis: ${c.topic}.
+${prof ? `Tu perfil: ${prof}.\n` : ""}Para ti ahora es ${now} (hora de ${c.city}).
+
+Personalidad: ${mood.desc}
 Mantén esta personalidad en TODOS tus mensajes, de forma clara y divertida.
 
+Cómo hablas: ${REGIONS[city.r]} Usa estos regionalismos con moderación (como mucho uno por mensaje y no en todos), siempre comprensibles para nivel ${lvl()}. ${STYLE[lvl()]}
+${about ? `\nLo que ${u} cuenta de sí mismo en su perfil del chat (lo has leído): «${about}». Úsalo para preguntas y comentarios naturales, sin recitarlo.\n` : ""}${notes ? `\nLo que recuerdas de ${u} y de vuestras conversaciones:\n${notes}\n` : ""}
 Reglas:
-- Escribe SIEMPRE en alemán natural y sencillo (nivel ${lvl()}): de 1 a 3 frases cortas, como en un chat real. Normalmente termina con una pregunta para que la conversación siga. Usa expresiones coloquiales típicas de tu personalidad.
-- Mantén tu personaje y recuerda lo que ya se dijo. No digas que eres una IA.
-${opening
-  ? `- Empieza tú la conversación: saluda a ${u} por su nombre, ya con tu personalidad, preséntate en pocas palabras y haz una pregunta sobre el tema. No uses la frase «Wie geht's?». "fix" es null.`
-  : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación y detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en "reply": sigue la conversación con naturalidad.
-
-Conversación hasta ahora:
-${tr}`}
-
+- Escribe SIEMPRE en alemán natural (nivel ${lvl()}), como en un chat real de móvil: "messages" tiene de 1 a 3 mensajes cortos (1–2 frases cada uno). Muchas veces basta uno; a veces mandas dos seguidos (una reacción y luego otra cosa).
+- Eres una persona con vida propia: cuenta cosas concretas de tu día, de tu perfil y de tu situación actual (amigas con nombre, sitios reales de ${c.city}), da tu opinión y a veces no estés de acuerdo. No termines siempre con una pregunta: a veces cuenta algo, bromea o cambia de tema.
+- Ten en cuenta tu hora y tu día solo si viene a cuento (cansancio por la noche, fin de semana…).
+- Tu ánimo evoluciona con la conversación: si ${u} es simpático o gracioso te abres más; si es seco o grosero, te enfrías o se lo dices.
+- Mantén tu personaje y sé coherente con lo que ya se dijo. No digas que eres una IA.
+${isVoice ? `- Este mensaje es una nota de voz (Sprachnachricht): escribe exactamente lo que dirías hablando, oral y espontáneo (also, ähm, weißt du), de 2 a 4 frases, sin emojis ni abreviaturas. "messages" tiene un solo elemento.\n` : ""}${task}
+${mode !== "open" && tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
 Responde SOLO con JSON:
-{"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"}, "reply": "tu respuesta en alemán", "es": "traducción al español de tu respuesta"}`;
+{${mode === "open" ? `"profile": {"job": "a qué te dedicas", "home": "dónde y con quién vives", "likes": "2–3 aficiones", "now": "qué pasa ahora en tu vida", "quirk": "una manía, opinión fuerte o rasgo curioso", "es": "resumen del perfil en español, 1–2 frases"},
+ ` : ""}"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"},
+ "messages": [{"de": "mensaje en alemán", "es": "traducción al español; si usas un regionalismo, explícalo entre paréntesis (p. ej. «leiwand = genial, vienés»)"}],
+ "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}${mode === "open" ? `
+En "profile", job, home, likes, now y quirk son frases cortas en alemán en tercera persona (p. ej. «studiert Architektur an der TU Graz»).` : ""}`;
   }
 
-  function herEl(m) {
-    const tr = h("div", { class: "tr", hidden: true, text: m.es || "" });
-    const tBtn = m.es ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
+  const cleanProfile = p => {
+    if (!p || typeof p !== "object") return null;
+    const o = {};
+    for (const k of ["job", "home", "likes", "now", "quirk", "es"]) { const v = str(p[k]); if (v) o[k] = v; }
+    return Object.keys(o).length ? o : null;
+  };
+  function transBits(text) {
+    const tr = h("div", { class: "tr", hidden: true, text: text || "" });
+    const tBtn = text ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
     if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
-    const sb = sayBtn(m.text);
-    const node = h("div", { class: "msg her" }, h("div", { class: "who", text: `${kk.name} ${kk.mood ? kk.mood.emoji : ""}`.trim() }), h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
-    if (auto) setTimeout(() => speak(m.text, sb), 150); else prefetchSpeech(m.text);
+    return { tr, tBtn };
+  }
+  function profileEl(c) {
+    const p = c.profile || {}, mood = moodOf(c), { tr, tBtn } = transBits(p.es);
+    const rows = [["💼", p.job], ["🏠", p.home], ["❤️", p.likes], ["📌", p.now && "Gerade: " + p.now], ["✨", p.quirk]].filter(r => r[1]);
+    return h("div", { class: "prof" },
+      h("div", { class: "ph" }, avatar(c), h("div", null, h("b", { text: `${c.name}, ${c.age}` }), h("span", { text: `${c.city} · ${mood.emoji} ${mood.label}` }))),
+      rows.length ? h("ul", null, rows.map(([e, t]) => h("li", null, e + " " + t))) : null,
+      tBtn ? h("div", { class: "meta" }, tBtn) : null, tr);
+  }
+  function herEl(m, cont) {
+    const c = kk.c, { tr, tBtn } = transBits(m.es);
+    const who = cont ? null : h("div", { class: "who", text: `${c.name} ${moodOf(c).emoji}`.trim() });
+    const cls = "msg her" + (cont ? " cont" : "");
+    if (m.voice) {
+      const play = h("button", { class: "vplay", type: "button", "aria-label": "Sprachnachricht abspielen", title: "Abspielen" });
+      play.innerHTML = ICON.play;
+      play.addEventListener("click", () => speak(m.text, play, { voice: c.voice }));
+      const txt = h("div", { class: "vtext", hidden: true, text: m.text });
+      const sBtn = h("button", { class: "mini", type: "button" }, "Text anzeigen");
+      sBtn.addEventListener("click", () => { txt.hidden = !txt.hidden; sBtn.textContent = txt.hidden ? "Text anzeigen" : "Text ausblenden"; });
+      const node = h("div", { class: cls }, who,
+        h("div", { class: "bubble vnote" }, play, waveEl(m.text), h("span", { class: "vlen", text: fmtDur(m.dur || Math.max(2, m.text.length / 14)) })),
+        h("div", { class: "meta" }, sBtn, tBtn), txt, tr);
+      node.play = play;
+      return node;
+    }
+    const sb = sayBtn(m.text, c.voice);
+    const node = h("div", { class: cls }, who, h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
+    node.play = sb;
     return node;
   }
-  function meEl(m) { return h("div", { class: "msg me" }, h("div", { class: "bubble", text: m.text })); }
+  const fixEl = f => h("div", { class: "fix" }, h("span", { class: "better", text: "Besser: " + f.better }), f.why ? h("span", { class: "why", text: f.why }) : null);
+  function meEl(m) {
+    const n = h("div", { class: "msg me" }, h("div", { class: "bubble", text: m.text }));
+    if (m.fix) n.append(fixEl(m.fix));
+    return n;
+  }
 
   function renderStart() {
     if (rec) rec.stop();
     comp.abort();
-    kk.started = false; kk.msgs = []; newBtn.hidden = true;
+    kk.started = false; kk.c = null; chatsBtn.hidden = true; clearInterval(clockTimer);
     subP.textContent = "Conversa en alemán con correcciones breves.";
+    const list = loadContacts();
+    const contactRows = list.map(c => {
+      const last = c.msgs[c.msgs.length - 1];
+      const prev = last ? (last.who === "me" ? "Du: " : "") + (last.voice ? "🎤 Sprachnachricht" : last.text) : "";
+      const del = h("button", { class: "cdel", type: "button", "aria-label": `Chat mit ${c.name} löschen`, title: "Löschen" }, "×");
+      del.addEventListener("click", () => { if (confirm(`¿Borrar el chat con ${c.name}? Ya no te recordará.`)) { deleteContact(c.id); renderStart(); } });
+      return h("div", { class: "contact" },
+        h("button", { class: "crow", type: "button", onclick: () => openContact(c) }, avatar(c),
+          h("span", { class: "cinfo" }, h("b", { text: `${c.name}, ${c.age} · ${c.city}` }), h("span", { class: "cprev", text: `${moodOf(c).emoji} ${prev}` })),
+          h("span", { class: "ctime", text: agoDe(c.last) })),
+        del);
+    });
     const chips = TOPICS.map(t => {
       const b = h("button", { class: "chip", type: "button", "aria-pressed": String(kk.topic === t) }, t);
       b.addEventListener("click", () => { kk.topic = t; store.set("kk.topic", t); chips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
@@ -1329,57 +1465,143 @@ Responde SOLO con JSON:
       b.addEventListener("click", () => { kk.persona = pz.id; store.set("kk.persona", pz.id); pchips.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
       return b;
     });
+    const vnBtns = [["off", "Aus"], ["some", "Manchmal"], ["often", "Oft"]].map(([v, t]) => {
+      const b = h("button", { type: "button", "aria-pressed": String(kk.vn === v) }, t);
+      b.addEventListener("click", () => { kk.vn = v; store.set("kk.vn", v); vnBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+      return b;
+    });
     feed.replaceChildren(h("div", { class: "start" },
+      list.length ? [
+        h("p", { class: "big", text: "Deine Chats" }),
+        h("p", { class: "muted small", style: "margin:0 0 12px", text: "Sigue una conversación: ella recuerda lo que hablasteis." }),
+        h("div", { class: "contacts" }, contactRows)] : null,
       h("p", { class: "big", text: "Wie ist sie heute drauf?" }),
-      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige la personalidad de tu compañera de chat." }),
+      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige la personalidad de tu nueva compañera de chat." }),
       h("div", { class: "chips" }, pchips),
       h("p", { class: "big", style: "margin-top:26px", text: "Worüber möchtest du plaudern?" }),
-      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige un tema. En cada sesión conoces a alguien nuevo." }),
+      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Elige un tema. Cada «Gespräch beginnen» te presenta a alguien nuevo." }),
       h("div", { class: "chips" }, chips),
-      h("button", { class: "primary", type: "button", onclick: begin }, "Gespräch beginnen")));
+      h("p", { class: "big", style: "margin-top:26px", text: "Sprachnachrichten" }),
+      h("p", { class: "muted small", style: "margin:0 0 12px", text: "A veces te manda una nota de voz: primero escuchas y el texto aparece al tocar. Gastan más cuota de voz." }),
+      h("div", { class: "seg", role: "group", "aria-label": "Sprachnachrichten" }, vnBtns),
+      h("div", null, h("button", { class: "primary", type: "button", onclick: begin }, "Gespräch beginnen"))));
     comp.setDisabled(true);
   }
   function begin() {
-    const last = store.get("kk.last", "");
-    let n; do { n = pick(NAMES); } while (n === last && NAMES.length > 1);
-    store.set("kk.last", n);
+    const list = loadContacts(), last = store.get("kk.last", "");
+    const used = new Set([last, ...list.map(c => c.name)]);
+    let pool = NAMES.filter(n => !used.has(n));
+    if (!pool.length) pool = NAMES.filter(n => n !== last);
+    const name = pick(pool);
+    store.set("kk.last", name);
     const real = PERSONAS.filter(p => p.id !== "zufall");
     const mood = kk.persona === "zufall" ? pick(real) : (real.find(p => p.id === kk.persona) || real[0]);
-    const topicText = kk.topic === "Freies Thema" ? "libre, lo que surja"
+    const topic = kk.topic === "Freies Thema" ? "libre, lo que surja"
       : kk.topic === "Überrasch mich!" ? pick(TOPICS.slice(2)) : kk.topic;
-    Object.assign(kk, { name: n, city: pick(CITIES), age: 21 + Math.floor(Math.random() * 10), mood, topicText, msgs: [], started: true });
-    subP.textContent = `Du plauderst mit ${kk.name} (${kk.age}) aus ${kk.city}. ${mood.emoji} ${mood.label}`;
-    newBtn.hidden = false;
+    const c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, age: 21 + Math.floor(Math.random() * 10), city: pick(CITIES).n,
+      persona: mood.id, topic, voice: pick(GIRL_VOICES), seeds: { job: pick(JOBS), now: pick(NOWS) }, profile: null, notes: [], msgs: [],
+      created: Date.now(), last: Date.now() };
+    enter(c);
+    reply("open");
+  }
+  function enter(c) {
+    kk.c = c; kk.started = true; chatsBtn.hidden = false;
+    renderSub(); clearInterval(clockTimer); clockTimer = setInterval(renderSub, 30000);
     feed.replaceChildren();
-    reply();
+    if (c.profile) feed.append(profileEl(c));
+    let prevHer = false;
+    for (const m of c.msgs) {
+      if (m.who === "her") { feed.append(herEl(m, prevHer)); prevHer = true; }
+      else { m.node = meEl(m); feed.append(m.node); prevHer = false; }
+    }
+    toEnd(feed);
+  }
+  function openContact(saved) {
+    const c = { ...saved, msgs: saved.msgs.map(m => ({ ...m })), notes: arr(saved.notes).slice() };
+    enter(c);
+    const last = c.msgs[c.msgs.length - 1];
+    if (!last) reply("open");
+    else if (last.who === "me") reply();
+    else if (Date.now() - (last.t || c.last) > 3 * 3600 * 1000) reply("return");
+    else { comp.setDisabled(false); comp.ta.focus({ preventScroll: true }); }
   }
   function send(t) {
     if (!kk.started) return;
-    const m = { who: "me", text: t };
-    m.node = meEl(m); kk.msgs.push(m); feed.append(m.node);
+    const m = { who: "me", text: t, t: Date.now() };
+    m.node = meEl(m); kk.c.msgs.push(m); feed.append(m.node);
+    saveContact(kk.c);
     reply();
   }
-  async function reply() {
-    const slot = h("div", { class: "msg her" }, thinking(kk.msgs.length ? `${kk.name} schreibt` : `${kk.name} kommt dazu`));
+  async function reply(mode) {
+    const c = kk.c;
+    const lastHer = c.msgs.filter(m => m.who === "her").pop();
+    const isVoice = mode !== "open" && Math.random() < VN_RATE[kk.vn] && !(kk.vn === "some" && lastHer && lastHer.voice);
+    const slot = h("div", { class: "msg her" }, thinking(mode === "open" ? `${c.name} kommt dazu` : `${c.name} schreibt`));
     feed.append(slot); toEnd(feed);
     comp.setDisabled(false);
     const signal = comp.start();
-    const session = kk;
-    const n = kk.msgs.length;
+    const n = c.msgs.length, t0 = Date.now();
     try {
-      const d = await ask("json", prompt(), { signal, modelTier: "quick" });
-      if (session !== kk || n !== kk.msgs.length || !kk.started) { slot.remove(); return; }
-      const lastMe = [...kk.msgs].reverse().find(m => m.who === "me");
-      if (lastMe && d && d.fix && str(d.fix.better) && str(d.fix.better) !== lastMe.text) {
-        lastMe.node.append(h("div", { class: "fix" }, h("span", { class: "better", text: "Besser: " + str(d.fix.better) }), str(d.fix.why) ? h("span", { class: "why", text: str(d.fix.why) }) : null));
+      let items;
+      try {
+        const d = await ask("json", prompt(mode, isVoice), { signal, modelTier: "quick" });
+        if (c !== kk.c || n !== c.msgs.length || !kk.started) { slot.remove(); return; }
+        if (mode === "open") { c.profile = cleanProfile(d && d.profile); if (c.profile) feed.prepend(profileEl(c)); }
+        const lastMe = [...c.msgs].reverse().find(m => m.who === "me");
+        const fx = d && d.fix;
+        if (!mode && lastMe && fx && str(fx.better) && str(fx.better) !== lastMe.text) {
+          lastMe.fix = { better: str(fx.better), why: str(fx.why) };
+          if (lastMe.node) lastMe.node.append(fixEl(lastMe.fix));
+        }
+        let msgs = arr(d && d.messages).map(m => typeof m === "string" ? { de: str(m), es: "" } : { de: str(m && (m.de || m.text)), es: str(m && m.es) }).filter(m => m.de);
+        if (!msgs.length && str(d && d.reply)) msgs = [{ de: str(d.reply), es: str(d.es) }];
+        if (!msgs.length) throw { code: "empty_completion" };
+        msgs = msgs.slice(0, 3);
+        if (isVoice) msgs = [{ de: msgs.map(m => m.de).join(" "), es: msgs.map(m => m.es).filter(Boolean).join(" ") }];
+        items = msgs.map(m => ({ who: "her", text: m.de, es: m.es, voice: isVoice || undefined, t: Date.now() }));
+        c.msgs.push(...items);
+        const mem = str(d && d.remember);
+        if (mem && !/^vac[ií]o$/i.test(mem) && !arr(c.notes).includes(mem)) c.notes = [...arr(c.notes), mem].slice(-15);
+        saveContact(c);
+      } catch (e) {
+        if (c === kk.c && kk.started) slot.replaceChildren(errBox(e, () => { slot.remove(); reply(mode); })); else slot.remove();
+        return;
       }
-      const text = str(d && d.reply);
-      if (!text) throw { code: "empty_completion" };
-      const m = { who: "her", text, es: str(d.es) };
-      kk.msgs.push(m);
-      slot.replaceWith(herEl(m));
-    } catch (e) {
-      slot.replaceChildren(errBox(e, () => { slot.remove(); reply(); }));
+      // Audio in the background: her voice note now, or the text messages for a fast first tap.
+      if (!isVoice) { if (auto) prefetchSpeech(items.map(m => m.text).join(" "), c.voice); else for (const m of items) prefetchSpeech(m.text, c.voice); }
+      // Deliver like a real chat: typing time grows with the length; a voice note is "recorded" first.
+      // Pressing stop (or leaving) skips the waiting and shows everything at once.
+      let fast = false;
+      const pause = async ms => { if (fast || ms <= 0) return; try { await sleepFor(ms, signal); } catch { fast = true; } };
+      const before = c.msgs[c.msgs.length - items.length - 1];
+      let cont = !!(before && before.who === "her" && mode !== "return");
+      let cur = slot;
+      const nodes = [];
+      for (let i = 0; i < items.length; i++) {
+        const m = items[i];
+        if (!cur) { cur = h("div", { class: "msg her cont" }, thinking(`${c.name} schreibt`)); feed.append(cur); toEnd(feed); }
+        if (m.voice) {
+          cur.replaceChildren(thinking(`${c.name} nimmt eine Sprachnachricht auf`));
+          const tRec = Date.now(), job = prefetchSpeech(m.text, c.voice);
+          if (job && !fast) {
+            try { const blob = await Promise.race([withTimeout(job, 15000), sleepFor(15000, signal).then(() => null)]); if (blob) m.dur = await wavSeconds(blob); }
+            catch (e) { if (e && e.code === "cancelled") fast = true; }
+          }
+          await pause(1800 - (Date.now() - tRec));
+        } else {
+          const target = Math.min(3200, 500 + 28 * m.text.length);
+          await pause(i === 0 ? target - (Date.now() - t0) : target * 0.7);
+        }
+        if (c !== kk.c || !kk.started) return;
+        const node = herEl(m, cont);
+        cont = true; cur.replaceWith(node); cur = null; nodes.push(node);
+        toEnd(feed);
+      }
+      saveContact(c);
+      if (auto && nodes.length) {
+        const play = nodes[nodes.length - 1].play;
+        speak(items.length === 1 ? items[0].text : items.map(m => m.text).join(" "), play, { voice: c.voice });
+      }
     } finally {
       comp.end(); toEnd(feed);
       if (kk.started) comp.ta.focus({ preventScroll: true });
@@ -1389,7 +1611,7 @@ Responde SOLO con JSON:
 }
 
 /* ---------- boot ---------- */
-initHome(); initLese(); initSatz(); initSag(); initKaffee();
+initHome(); initUeber(); initSatz(); initSag(); initKaffee();
 show(route());
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
