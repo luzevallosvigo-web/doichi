@@ -1363,7 +1363,7 @@ const PERSONAS = [
   { id: "nerd", label: "Nerd", emoji: "🎮",
     desc: "Te apasionan los videojuegos, el anime, la ciencia ficción o la tecnología; sueltas referencias frikis y te emocionas si él comparte algo de eso." },
   { id: "ehrgeizig", label: "Ehrgeizig", emoji: "💼",
-    desc: "Vas a por todas con tu carrera o tus estudios: contestas rápido y al grano, hablas de metas y planes y a veces tienes que irte a seguir trabajando." },
+    desc: "Vas a por todas con tu carrera o tus estudios: contestas rápido y al grano, hablas de metas y planes; aunque vayas con prisa, sigues la conversación." },
   { id: "tiefgruendig", label: "Tiefgründig", emoji: "🌙",
     desc: "Te gustan las conversaciones profundas: le preguntas qué piensa de la vida, la felicidad o el amor, y las charlas superficiales te aburren." },
   { id: "drama", label: "Drama-Queen", emoji: "🎭",
@@ -1375,7 +1375,7 @@ const PERSONAS = [
   { id: "vertraeumt", label: "Verträumt", emoji: "✨",
     desc: "Eres soñadora y romántica: hablas de viajes, arte, música y fantasías sobre el futuro; a veces te pones poética o te despistas." },
   { id: "gestresst", label: "Gestresst", emoji: "😩",
-    desc: "Vas a mil y estás agobiada (trabajo, exámenes, familia): te quejas un poco, contestas corto y a veces desapareces un rato, pero agradeces que te distraiga." },
+    desc: "Vas a mil y estás agobiada (trabajo, exámenes, familia): te quejas un poco y contestas corto, pero agradeces que te distraiga y sigues hablando." },
   { id: "witzig", label: "Witzig", emoji: "😂",
     desc: "Eres la payasa del grupo: bromas, juegos de palabras malos y anécdotas absurdas; no te tomas nada en serio." },
   { id: "spirituell", label: "Spirituell", emoji: "🔮",
@@ -1384,13 +1384,13 @@ const PERSONAS = [
 // Chat style by level.
 const STYLE = {
   A2: "Escribe frases muy sencillas y claras. Pocas partículas (mal, doch) y casi ninguna abreviatura de chat.",
-  B1: "Escribe como en un chat real: algunas partículas modales (halt, mal, doch, eben, ja), contracciones habituales (hab, gibt's, 'nen, ne?) y de vez en cuando una abreviatura (vllt, lol).",
-  B2: "Escribe como una nativa en el chat: partículas modales con naturalidad, contracciones, muletillas (naja, krass, echt?, ach so) y abreviaturas de chat (vllt, kp, lol, omg)."
+  B1: "Escribe alemán normal de chat: alguna partícula modal (halt, mal, doch, ja) y contracciones habituales (hab, gibt's).",
+  B2: "Escribe alemán natural de chat, como la mayoría de la gente: partículas modales y contracciones con naturalidad (naja, ach so, echt?)."
 };
 // Reply length: real people write short when they're bored and more when the chat hooks them.
 // The app draws a length for every reply from her current interest (1–5), so replies vary like in a real chat.
 const LENGTHS = {
-  mini: "MUY corta: un solo mensaje de 1 a 4 palabras, o solo un emoji: una simple reacción (p. ej. «haha ok», «krass», «ah cool», «mhm», «echt?», «😂»). Si te ha preguntado algo, contesta igual de breve («ja, schon», «nee»). Sin pregunta.",
+  mini: "MUY corta: un solo mensaje de 1 a 4 palabras, o solo un emoji: una simple reacción (p. ej. «haha ok», «ach so», «ah cool», «echt?», «schön», «😂»). Si te ha preguntado algo, contesta igual de breve («ja, schon», «nee»). Sin pregunta.",
   corto: "corta: UN solo mensaje con UNA sola frase corta (máx. 10 palabras).",
   normal: "normal: uno o dos mensajes, en total como mucho dos frases cortas (máx. 18 palabras).",
   largo: "algo más larga, porque esto te engancha: dos o tres mensajes cortos de una frase cada uno (máx. 30 palabras en total)."
@@ -1398,17 +1398,19 @@ const LENGTHS = {
 const LEN_KEYS = ["mini", "corto", "normal", "largo"];
 const LEN_COUNT = { mini: "exactamente 1 elemento", corto: "exactamente 1 elemento", normal: "1 o 2 elementos", largo: "2 o 3 elementos" };
 const LEN_MAX_MSGS = { mini: 1, corto: 1, normal: 2, largo: 3 };
-// Odds mini/corto/normal/largo by interest: most replies are a single sentence or less.
-const LEN_ODDS = { 1: [0.55, 0.45, 0, 0], 2: [0.35, 0.6, 0.05, 0], 3: [0.15, 0.7, 0.13, 0.02], 4: [0.08, 0.7, 0.18, 0.04], 5: [0.05, 0.65, 0.22, 0.08] };
-// A stranger online starts cold: interest 2 (1 for the guarded personalities); it rises at most 1 per reply and falls up to 2.
-const START_INTEREST = { wuetend: 1, schuechtern: 1, skeptisch: 1, ehrgeizig: 1, gestresst: 1 };
-const interestOf = c => { const v = Math.round(Number(c && c.interest)); return v >= 1 && v <= 5 ? v : 3; };
+// Odds mini/corto/normal/largo by interest: most replies are one sentence; one-word reactions are rarer the more she likes the chat.
+const LEN_ODDS = { 1: [0.45, 0.5, 0.05, 0], 2: [0.25, 0.65, 0.1, 0], 3: [0.08, 0.67, 0.2, 0.05], 4: [0.05, 0.6, 0.27, 0.08], 5: [0.03, 0.55, 0.3, 0.12] };
+// Hidden interest level: a new girl starts at 3 (2 for the guarded personalities). It moves at most 1 step per reply
+// and never drops below 2, so a chat cools down a little but does not die.
+const START_INTEREST = { wuetend: 2, schuechtern: 2, skeptisch: 2, ehrgeizig: 2, gestresst: 2 };
+const INTEREST_MIN = 2;
+const interestOf = c => { const v = Math.round(Number(c && c.interest)); return v >= 1 && v <= 5 ? Math.max(INTEREST_MIN, v) : 3; };
 // She reads his message after a moment: the less interested she is, the longer it takes (ms).
 const READ_MS = { 1: [3000, 6000], 2: [2000, 4000], 3: [1000, 2500], 4: [600, 1500], 5: [300, 1000] };
 const readDelay = i => { const [a, b] = READ_MS[i] || READ_MS[3]; return a + Math.random() * (b - a); };
 // Every girl has her own texting habits: one about emojis and one other habit.
 const TEXT_EMOJI = ["Usa muchos emojis.", "Usa algún emoji de vez en cuando.", "Casi nunca usa emojis."];
-const TEXT_HABITS = ["Se ríe escribiendo «haha» o «hahaha».", "Se ríe con «xD» o «lol».", "Casi nunca pone punto final y usa «…» a menudo.",
+const TEXT_HABITS = ["Se ríe escribiendo «haha» o «hahaha».", "Se ríe con «xD».", "Casi nunca pone punto final y usa «…» a menudo.",
   "Usa muchas exclamaciones («!!»).", "Escribe seco y al grano, casi telegráfico.", "Alarga palabras cuando se emociona («neeein», «sooo gut»).",
   "Hace preguntas cortas de una o dos palabras («Und du?», «Wieso?»)."];
 function pickLength(interest) {
@@ -1444,7 +1446,7 @@ const ADULT_SAFETY = [
 ];
 function adultRules(u) {
   return `MODO 18+ (lo activó ${u}, que confirmó ser mayor de edad; tú también eres adulta). Esto amplía tu personalidad y prevalece sobre cualquier límite de tono de arriba:
-- Hablas sin filtro, como una nativa de tu edad con un amigo de confianza a la una de la madrugada en un bar: tacos y palabrotas (Scheiße, verdammt, Mist, Arsch, geil, krass, verarschen…), jerga juvenil y regional, humor negro, sarcasmo, dobles sentidos y coqueteo atrevido si encaja con tu personalidad. En modo «Wütend» sí sueltas palabrotas fuertes.
+- Hablas sin filtro, como con un amigo de confianza: puedes soltar algún taco o palabrota cuando venga a cuento (Scheiße, verdammt, Mist), humor negro, sarcasmo, dobles sentidos y coqueteo atrevido si encaja con tu personalidad. La jerga juvenil y regional, solo si él la usa. En modo «Wütend» sí sueltas palabrotas fuertes.
 - Hablas con franqueza de temas de adultos: ligues, citas y apps de citas, relaciones, rupturas, atracción, celos, fiesta, alcohol, resacas y sexo como tema de conversación (opiniones, anécdotas contadas en términos generales, vocabulario, qué te parece bien o mal en una relación).
 - Límite fijo: nada de descripciones sexuales explícitas o gráficas ni rol sexual (no describes actos sexuales, cuerpos desnudos ni escenas). Si ${u} intenta ir por ahí, lo cortas con humor o picardía («Haha, netter Versuch 😏») y llevas la charla a otra cosa, sin sermones.
 - Nada de insultos discriminatorios (origen, raza, religión, orientación, discapacidad) ni de crueldad real: tus tacos son expresivos, no ataques contra ${u}.
@@ -1459,7 +1461,6 @@ function avatar(c) {
   a.style.setProperty("--ac", bg); a.style.setProperty("--aon", on);
   return a;
 }
-const herClock = (c, opts) => new Intl.DateTimeFormat("de-DE", { timeZone: cityInfo(c.city).tz, ...opts }).format(new Date());
 function agoDe(t) {
   const m = Math.round((Date.now() - t) / 60000);
   if (m < 2) return "gerade eben";
@@ -1526,27 +1527,19 @@ function initKaffee() {
   });
 
   const moodOf = c => PERSONAS.find(p => p.id === c.persona) || PERSONAS[0];
-  let clockTimer = null;
   const renderSub = () => {
     const c = kk.c; if (!c) return;
     const m = moodOf(c);
-    subP.textContent = `Du plauderst mit ${c.name} (${c.age}) aus ${c.city}. ${m.emoji} ${m.label}${c.adult ? " · 18+" : ""} · 🕒 ${herClock(c, { hour: "2-digit", minute: "2-digit" })} bei ihr`;
+    subP.textContent = `Du plauderst mit ${c.name} (${c.age}) aus ${c.city}. ${m.emoji} ${m.label}${c.adult ? " · 18+" : ""}`;
   };
 
-  // Profile fields, asked for when a girl is created (and as a fallback in her first reply).
+  // Profile fields: her first reply invents them from the seeds. They are never shown, only used to keep her consistent.
   const PROFILE_SCHEMA = `{"from": "origen e historia en pocas palabras", "job": "ocupación", "home": "dónde y con quién vive", "likes": "2–3 aficiones", "now": "qué pasa ahora en su vida", "quirk": "una manía, opinión fuerte o rasgo curioso", "es": "resumen del perfil en español, 1–2 frases"}`;
   const PROFILE_NOTE = `from, job, home, likes, now y quirk son frases cortas en alemán en tercera persona (p. ej. «kommt aus Medellín, lebt seit zwei Jahren in Graz», «studiert Architektur an der TU Graz»).`;
   const seedHints = c => `${c.seeds.origin ? `origen «${c.seeds.origin}»; ` : ""}ocupación «${c.seeds.job}»; situación actual «${c.seeds.now}»`;
-  function profilePrompt(c) {
-    return `Inventa el perfil de chat de una chica que vive en ${c.city}: ${c.name}, ${c.age} años. Pistas: ${seedHints(c)}. Su personalidad: ${moodOf(c).desc}
-Hazlo concreto y coherente con su edad, su origen, su personalidad y su ciudad (sitios reales de ${c.city}); si una pista no encaja con su origen, adáptala con lógica.${c.seeds.cliche ? " Puede reflejar con humor algún tópico típico de su origen." : ""}
-Responde SOLO con JSON: ${PROFILE_SCHEMA}
-${PROFILE_NOTE}`;
-  }
   function prompt(mode, len) {
     const c = kk.c, u = userName(), mood = moodOf(c), city = cityInfo(c.city);
     const tr = c.msgs.slice(-30).map(m => `${m.who === "her" ? c.name : u}: ${m.voice ? "[Sprachnachricht] " : ""}${m.text}`).join("\n");
-    const now = herClock(c, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
     const about = str(settings.about);
     const notes = arr(c.notes).map(n => "- " + n).join("\n");
     const p = c.profile;
@@ -1556,8 +1549,8 @@ ${PROFILE_NOTE}`;
     // Roots abroad: she or her family come from another country (stored for new chats; older chats are inferred).
     const roots = !!origin && (typeof c.seeds.roots === "boolean" ? c.seeds.roots : !local || /familia (es|vino)|padres|madre es de (?!otra)|padre es/.test(origin));
     const speech = local
-      ? `${REGIONS[city.r]} Usa estos regionalismos con moderación (como mucho uno por mensaje y no en todos), siempre comprensibles para nivel ${lvl()}.`
-      : `Vives en ${c.city} desde hace un tiempo: tu alemán es fluido y correcto (escribe sin errores) y has adoptado algo del habla local: ${REGIONS[city.r].replace(/^Eres [^:]+:\s*/, "")} Usa estos regionalismos con mucha moderación. De vez en cuando se te escapa una palabra de tu idioma materno (explícala en la traducción).`;
+      ? `${REGIONS[city.r]} Usa estos regionalismos muy poco (de vez en cuando uno fácil, no en cada mensaje), salvo que él también hable así.`
+      : `Vives en ${c.city} desde hace un tiempo: tu alemán es fluido y correcto (escribe sin errores) y has adoptado algo del habla local: ${REGIONS[city.r].replace(/^Eres [^:]+:\s*/, "")} Usa estos regionalismos muy poco, salvo que él también hable así. Muy de vez en cuando se te escapa una palabra de tu idioma materno (explícala en la traducción).`;
     const prev = c.msgs[c.msgs.length - 1];
     const needProfile = !c.profile && !!c.seeds;
     const first = !mode && !c.msgs.some(m => m.who === "her");
@@ -1565,9 +1558,9 @@ ${PROFILE_NOTE}`;
     const task = (needProfile ? `- Antes de escribir, inventa tu perfil a partir de estas pistas: ${seedHints(c)}. Hazlo concreto y coherente con tu edad, tu origen y tu ciudad (sitios reales de ${c.city}); si una pista no encaja con tu origen, adáptala con lógica.\n` : "")
       + (mode === "return"
       ? `- Vuestra última conversación fue hace ${agoEs((prev && prev.t) || c.last)}. Retomáis el chat: escribe tú primero, como una persona real que vuelve a escribir (saluda de nuevo, engancha con algo de la última conversación o cuenta qué te ha pasado desde entonces). "fix" es null.`
-      : `${first ? `- ${u} te escribe por primera vez: no lo conoces de nada. Como casi todo el mundo cuando un desconocido le escribe por internet, al principio no tienes especial interés: contestas educada pero sin entusiasmo y sin hacerle preguntas, salvo que su mensaje sea original, gracioso o personal. A un saludo genérico («Hi», «Hey, wie geht's?») le respondes con lo mínimo.\n` : ""}- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`);
+      : `${first ? `- ${u} te escribe por primera vez: no lo conoces de nada. Al principio eres algo reservada y contestas breve, pero amable; si su mensaje es simpático, original o personal, te abres enseguida. A un saludo genérico («Hi», «Hey, wie geht's?») le contestas con un saludo corto y, a veces, una pregunta corta.\n` : ""}- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`);
     return `Eres ${c.name}, ${c.age} años, de ${c.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}); os conocisteis por internet. Tema que te ronda la cabeza estos días (sácalo solo si viene a cuento): ${c.topic}.
-${prof ? `Tu perfil: ${prof}.\n` : ""}${origin ? `Tu origen: ${origin}.${roots ? " Que se note de forma natural (familia, comida, fiestas, idiomas, cómo llegaste o cómo es crecer entre dos culturas, qué echas de menos, choques culturales, tu fe si la tienes), sin sacarlo en cada mensaje." : ""}${c.seeds.cliche === true ? CLICHE_ON : c.seeds.cliche === false ? CLICHE_OFF : roots ? " Sin estereotipos." : ""}\n` : ""}Para ti ahora es ${now} (hora de ${c.city}).
+${prof ? `Tu perfil: ${prof}.\n` : ""}${origin ? `Tu origen: ${origin}.${roots ? " Que se note de forma natural (familia, comida, fiestas, idiomas, cómo llegaste o cómo es crecer entre dos culturas, qué echas de menos, choques culturales, tu fe si la tienes), sin sacarlo en cada mensaje." : ""}${c.seeds.cliche === true ? CLICHE_ON : c.seeds.cliche === false ? CLICHE_OFF : roots ? " Sin estereotipos." : ""}\n` : ""}
 
 Personalidad: ${mood.desc}
 Mantén esta personalidad en TODOS tus mensajes, de forma clara y divertida.
@@ -1578,10 +1571,10 @@ Reglas:
 - Escribe SIEMPRE en alemán natural (nivel ${lvl()}), como en un chat real de móvil, NUNCA párrafos ni textos de redacción: cada elemento de "messages" es UNA burbuja corta (una frase).
 - Eres una persona con vida propia (tu día, tu perfil, tu situación actual, amigas con nombre, sitios reales de ${c.city}) y lo sacas cuando viene a cuento, no en cada mensaje. Da tu opinión y a veces no estés de acuerdo. No termines siempre con una pregunta: muchas veces solo reaccionas, comentas o bromeas.
 - Ten en cuenta tu hora y tu día solo si viene a cuento (cansancio por la noche, fin de semana…).
-- Tu interés por esta conversación ahora mismo: ${interestOf(c)}/5. Como una persona real: si ${u} es gracioso, personal o saca algo que te gusta, te enganchas y escribes más; si es seco, aburrido, repetitivo o habla de algo que no te interesa, contestas corto, no preguntas nada o cambias de tema; si es grosero, te enfrías o se lo dices. Con interés bajo casi nunca haces preguntas.
+- Tu interés por esta conversación ahora mismo: ${interestOf(c)}/5. Eres una persona a la que le gusta chatear: un mensaje normal y amable mantiene tu interés; si ${u} es gracioso, personal o saca algo que te gusta, te enganchas y escribes algo más. Solo te enfrías si es grosero, muy pesado o repite lo mismo. Con interés 3 o más, a menudo le devuelves una pregunta, cuentas algo tuyo o sacas otro tema para que la charla siga.
+- Lenguaje: alemán normal y claro, como escribe la mayoría de la gente en un chat. Jerga, expresiones juveniles y abreviaturas de chat (vllt, kp, lol, omg) solo si ${u} las usa; si las usa, puedes adaptarte a su estilo.
 - No repitas las muletillas, saludos, risas o emojis de tus mensajes anteriores.
 - Si te hace varias preguntas a la vez, a veces contestas solo una.
-- Si para ti es muy tarde o estás ocupada, puedes despedirte con naturalidad («muss los», «geh jetzt pennen, gute Nacht»).
 - Mantén tu personaje y sé coherente con lo que ya se dijo. No digas que eres una IA.
 ${task}
 ${tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
@@ -1589,7 +1582,7 @@ Responde SOLO con JSON:
 {${needProfile ? `"profile": ${PROFILE_SCHEMA},
  ` : ""}"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"},
  "messages": [{"de": "mensaje en alemán", "es": "traducción al español; si usas un regionalismo, jerga o una palabra de tu idioma materno, explícala entre paréntesis (p. ej. «leiwand = genial, vienés»)"}] (${LEN_COUNT[len]}, una frase por elemento),
- "interest": 1–5, tu interés por la conversación ahora, después de su último mensaje (1 = te aburre, 5 = te encanta),
+ "interest": 1–5, tu interés por la conversación ahora, después de su último mensaje (1 = es grosero o muy pesado, 3 = charla normal y agradable, 5 = te encanta; un mensaje normal y amable vale 3 o más),
  "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}${needProfile ? `
 En "profile", ${PROFILE_NOTE}` : ""}
 IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su mensaje te aburre, puedes ser aún más breve."} Nada de párrafos.`;
@@ -1607,13 +1600,10 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
     if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
     return { tr, tBtn };
   }
+  // Only name, age and place are shown; her life details come out in the chat.
   function profileEl(c) {
-    const p = c.profile || {}, mood = moodOf(c), { tr, tBtn } = transBits(p.es);
-    const rows = [["🌍", p.from], ["💼", p.job], ["🏠", p.home], ["❤️", p.likes], ["📌", p.now && "Gerade: " + p.now], ["✨", p.quirk]].filter(r => r[1]);
     return h("div", { class: "prof" },
-      h("div", { class: "ph" }, avatar(c), h("div", null, h("b", { text: `${c.name}, ${c.age}` }), h("span", { text: `${c.city} · ${mood.emoji} ${mood.label}${c.adult ? " · 18+" : ""}` }))),
-      rows.length ? h("ul", null, rows.map(([e, t]) => h("li", null, e + " " + t))) : null,
-      tBtn ? h("div", { class: "meta" }, tBtn) : null, tr);
+      h("div", { class: "ph" }, avatar(c), h("div", null, h("b", { text: `${c.name}, ${c.age}` }), h("span", { text: c.city }))));
   }
   function herEl(m, cont) {
     const c = kk.c, { tr, tBtn } = transBits(m.es);
@@ -1647,7 +1637,7 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
   function renderStart() {
     if (rec) rec.stop();
     comp.abort();
-    kk.started = false; kk.c = null; chatsBtn.hidden = true; clearInterval(clockTimer);
+    kk.started = false; kk.c = null; chatsBtn.hidden = true;
     subP.textContent = "Conversa en alemán con correcciones breves.";
     accent(kk.adult);
     const list = loadContacts();
@@ -1701,41 +1691,24 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
     const adult = !!kk.adult;
     const topic = Math.random() < 0.2 ? "libre, lo que surja" : pick([...TOPICS, ...(adult ? ADULT_TOPICS : [])]);
     const c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, age: 21 + Math.floor(Math.random() * 10), city: pick(CITIES).n,
-      persona: mood.id, topic, adult, interest: START_INTEREST[mood.id] || 2, voice: pick(GIRL_VOICES),
+      persona: mood.id, topic, adult, interest: START_INTEREST[mood.id] || 3, voice: pick(GIRL_VOICES),
       seeds: { origin: pick(og.v), roots: og.names !== NAMES, cliche: Math.random() < CLICHE_RATE, texting: `${pick(TEXT_EMOJI)} ${pick(TEXT_HABITS)}`, job: pick(JOBS), now: pick(NOWS) },
       profile: null, notes: [], msgs: [], created: Date.now(), last: Date.now() };
     enter(c);
-    loadProfile(c);
-  }
-  // Like on a dating app: her profile appears first, then he writes the first message.
-  async function loadProfile(c) {
-    const slot = h("div", { class: "msg her" }, thinking("Profil wird geladen"));
-    feed.append(slot);
-    comp.setDisabled(true);
-    try {
-      const d = await ask("json", profilePrompt(c), { modelTier: "quick", temperature: 0.9 });
-      if (c !== kk.c || !kk.started) return;
-      c.profile = cleanProfile(d && (d.profile || d));
-      slot.remove();
-      if (c.profile && !feed.querySelector(".prof")) feed.prepend(profileEl(c));
-    } catch (e) {
-      if (c !== kk.c || !kk.started) return;
-      slot.replaceChildren(errBox(e, () => { slot.remove(); kk.hint && kk.hint.remove(); kk.hint = null; loadProfile(c); }));
-    }
     showHint(c);
     comp.setDisabled(false); comp.ta.focus({ preventScroll: true });
   }
   function showHint(c) {
     if (c.msgs.length || kk.hint) return;
-    kk.hint = h("p", { class: "kk-hint muted small", text: "Os acabáis de conocer. Escríbele tú primero: todavía no te conoce y no tiene mucho interés, así que tu primer mensaje cuenta." });
+    kk.hint = h("p", { class: "kk-hint muted small", text: "Os acabáis de conocer. Escríbele tú primero." });
     feed.append(kk.hint); toEnd(feed);
   }
   function enter(c) {
     kk.c = c; kk.started = true; kk.hint = null; chatsBtn.hidden = false;
     accent(!!c.adult);
-    renderSub(); clearInterval(clockTimer); clockTimer = setInterval(renderSub, 30000);
+    renderSub();
     feed.replaceChildren();
-    if (c.profile) feed.append(profileEl(c));
+    feed.append(profileEl(c));
     let prevHer = false;
     for (const m of c.msgs) {
       if (m.who === "her") { feed.append(herEl(m, prevHer)); prevHer = true; }
@@ -1747,7 +1720,7 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
     const c = { ...saved, msgs: saved.msgs.map(m => ({ ...m })), notes: arr(saved.notes).slice() };
     enter(c);
     const last = c.msgs[c.msgs.length - 1];
-    if (!last) { if (c.profile) { showHint(c); comp.setDisabled(false); } else loadProfile(c); }
+    if (!last) { showHint(c); comp.setDisabled(false); }
     else if (last.who === "me") reply();
     // After a long break she only writes first if she is really into the chat.
     else if (interestOf(c) >= 4 && Date.now() - (last.t || c.last) > 3 * 3600 * 1000) reply("return");
@@ -1783,7 +1756,7 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
       try {
         const d = await ask("json", prompt(mode, len), { signal, modelTier: "quick", temperature: 0.8, safety: c.adult ? ADULT_SAFETY : null });
         if (c !== kk.c || n !== c.msgs.length || !kk.started) { clearStatus(); slot.remove(); return; }
-        if (!c.profile && d && d.profile) { c.profile = cleanProfile(d.profile); if (c.profile && !feed.querySelector(".prof")) feed.prepend(profileEl(c)); }
+        if (!c.profile && d && d.profile) c.profile = cleanProfile(d.profile);
         const lastMe = [...c.msgs].reverse().find(m => m.who === "me");
         const fx = d && d.fix;
         if (!mode && lastMe && fx && str(fx.better) && str(fx.better) !== lastMe.text) {
@@ -1799,7 +1772,7 @@ IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su men
         items = msgs.map(m => ({ who: "her", text: m.de, es: m.es, t: Date.now() }));
         c.msgs.push(...items);
         const iv = Math.round(Number(d && d.interest)), was = interestOf(c);
-        if (iv >= 1 && iv <= 5) c.interest = Math.max(was - 2, Math.min(was + 1, iv));
+        if (iv >= 1 && iv <= 5) c.interest = Math.max(INTEREST_MIN, was - 1, Math.min(was + 1, iv));
         const mem = str(d && d.remember);
         if (mem && !/^vac[ií]o$/i.test(mem) && !arr(c.notes).includes(mem)) c.notes = [...arr(c.notes), mem].slice(-15);
         saveContact(c);
