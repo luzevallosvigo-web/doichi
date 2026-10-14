@@ -201,6 +201,8 @@ mark.sm{background:var(--sca);color:inherit;border-radius:3px;padding:0 2px}
 .wave i{flex:1;max-width:4px;border-radius:2px;background:currentColor}
 .vlen{flex:none;font-family:var(--sans);font-size:13px;color:var(--muted)}
 .vtext{font-family:var(--serif);font-style:italic;font-size:16px;max-width:86%;margin-top:6px}
+.seen{font-size:12.5px;color:var(--muted);text-align:right;margin-top:3px}
+.kk-hint{text-align:center;margin:18px auto 6px;max-width:34ch}
 /* Kaffeeklatsch 18+: register labels */
 .field textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:8px 12px;font:inherit;font-size:16px;line-height:1.4;resize:vertical;background:var(--paper);color:var(--ink)}
 
@@ -328,7 +330,16 @@ function audioCtx() {
   return actx;
 }
 
-let speakToken = 0, ttsCooldownUntil = 0, ttsNotice = false, streamUnsupported = false;
+let speakToken = 0, ttsNotice = false, streamUnsupported = false;
+// Natural voice: the selected TTS model first, then the other one as a backup (each model has its own free quota).
+// A model that hits its limit pauses for a minute; only when every model is paused does the device voice take over.
+const TTS_MODELS = ["gemini-3.8-flash-lite-tts", "gemini-3.8-flash-tts"];
+const TTS_PAUSE = 60 * 1000;
+const ttsPausedUntil = {};
+const ttsChain = () => [cfg.gemini.tts, ...TTS_MODELS.filter(m => m !== cfg.gemini.tts)];
+const ttsModel = () => ttsChain().find(m => Date.now() > (ttsPausedUntil[m] || 0));
+const pauseTts = (m, ms = TTS_PAUSE) => { ttsPausedUntil[m] = Date.now() + ms; };
+const resetTts = () => { for (const k of Object.keys(ttsPausedUntil)) delete ttsPausedUntil[k]; ttsNotice = false; };
 let liveSources = [], liveCtl = null;
 function stopAudio() {
   speakToken++;
@@ -359,10 +370,22 @@ function playBlob(key, blob, btn, text) {
   const pr = player.play();
   if (pr) pr.then(() => { player.playbackRate = rate; }).catch(() => { if (btn) btn.classList.remove("playing"); deviceSpeak(text, btn); });
 }
-const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && Date.now() > ttsCooldownUntil;
+const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && !!ttsModel();
 // Natural-voice name: the Settings voice, or a per-girl voice in Kaffeeklatsch (only when a Gemini voice is selected).
 const voiceName = v => (v && settings.voice.startsWith("g:")) ? v : settings.voice.slice(2);
-const ttsKey = (text, v) => `v2|${cfg.gemini.tts}|${voiceName(v)}|${text}`;
+// The cache key does not depend on the model, so audio from either model is reused.
+const ttsKey = (text, v) => `v3|${voiceName(v)}|${text}`;
+async function cachedAudio(text, v) {
+  const key = ttsKey(text, v);
+  const blob = await idbGet(key);
+  if (blob) return blob;
+  // Audio saved by older versions (key with the model name) is reused instead of generated again.
+  for (const m of ttsChain()) {
+    const old = await idbGet(`v2|${m}|${voiceName(v)}|${text}`);
+    if (old) { idbPut(key, old); return old; }
+  }
+  return null;
+}
 const pendingAudio = new Map();
 
 // Emojis are shown in the chat but never read aloud.
@@ -378,46 +401,37 @@ async function speak(text, btn, opts = {}) {
   const v = opts.voice;
   const key = ttsKey(text, v);
   try {
-    let blob = await idbGet(key);
+    let blob = await cachedAudio(text, v);
     if (!blob && pendingAudio.has(key)) {
       if (btn) btn.classList.add("loading");
-      blob = await withTimeout(pendingAudio.get(key), 20000);
+      try { blob = await withTimeout(pendingAudio.get(key), 20000); }
+      catch (e) { if (!(e && (e.code === "rate_limited" || e.code === "model_not_found"))) throw e; blob = null; }
     }
     if (token !== speakToken) return;
     if (blob) { if (btn) btn.classList.remove("loading"); playBlob(key, blob, btn, text); return; }
     if (btn) btn.classList.add("loading");
-    const ctl = new AbortController(); liveCtl = ctl;
-    const timer = setTimeout(() => { ctl.timedOut = true; ctl.abort(); }, 20000);
-    let started = false;
-    const onStart = () => { started = true; clearTimeout(timer); if (btn) { btn.classList.remove("loading"); btn.classList.add("playing"); } };
-    try {
-      // Normal speed: stream and start playing as soon as the first audio arrives.
-      // Slow speed: download fully, then play at 0.8x with natural pitch.
-      if (!settings.slow && !streamUnsupported && audioCtx()) {
-        try { blob = await streamTTS(text, ctl.signal, token, onStart, btn, v); }
-        catch (e) {
-          if (e && e.code === "bad_request" && !started) { streamUnsupported = true; blob = null; }
-          else throw e;
+    // The selected model first; if it hits its limit (or does not exist), the next one before the device voice.
+    for (;;) {
+      const model = ttsModel();
+      if (!model) throw { code: "rate_limited" };
+      try { await speakLive(model, text, key, token, btn, v); return; }
+      catch (e) {
+        if (e && !e.started && token === speakToken && (e.code === "rate_limited" || e.code === "model_not_found")) {
+          if (e.code === "model_not_found") {
+            pauseTts(model, 10 * 60 * 1000);
+            if (!ttsNotice) { ttsNotice = true; toast(`El modelo de voz «${model}» no respondió; uso el otro. Revisa el «Sprachmodell» en Einstellungen.`); }
+          } else pauseTts(model);
+          continue;
         }
-        if (!blob && streamUnsupported && token === speakToken) {
-          blob = await fetchTTS(text, ctl.signal, v);
-          if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
-        }
-      } else {
-        blob = await fetchTTS(text, ctl.signal, v);
-        if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
+        throw e;
       }
-    } finally { clearTimeout(timer); if (liveCtl === ctl) liveCtl = null; }
-    if (blob) idbPut(key, blob);
-    if (token === speakToken && !started) throw { code: ctl.timedOut ? "timeout" : "empty_completion" };
-    return;
+    }
   } catch (e) {
     if (token !== speakToken && !(e && e.code === "timeout")) return;
     if (btn) btn.classList.remove("loading", "playing");
     if (e && e.code === "cancelled" && token !== speakToken) return;
     if (e && e.code === "rate_limited") {
-      ttsCooldownUntil = Date.now() + 60 * 1000;
-      toast("Límite de la voz natural alcanzado. Uso la voz del dispositivo por ahora.");
+      toast("Los dos modelos de voz natural llegaron a su límite. Uso la voz del dispositivo durante un minuto.");
     } else if (e && (e.code === "timeout" || (e.code === "cancelled"))) {
       toast("La voz natural tarda demasiado. Uso la voz del dispositivo.");
     } else if (!ttsNotice) {
@@ -428,25 +442,58 @@ async function speak(text, btn, opts = {}) {
     deviceSpeak(text, btn);
   }
 }
+// One attempt with one TTS model: stream at normal speed, download fully at slow speed.
+// Errors say whether audio had already started (then switching models makes no sense).
+async function speakLive(model, text, key, token, btn, v) {
+  const ctl = new AbortController(); liveCtl = ctl;
+  const timer = setTimeout(() => { ctl.timedOut = true; ctl.abort(); }, 20000);
+  let started = false, blob = null;
+  const onStart = () => { started = true; clearTimeout(timer); if (btn) { btn.classList.remove("loading"); btn.classList.add("playing"); } };
+  try {
+    // Normal speed: stream and start playing as soon as the first audio arrives.
+    // Slow speed: download fully, then play at 0.8x with natural pitch.
+    if (!settings.slow && !streamUnsupported && audioCtx()) {
+      try { blob = await streamTTS(text, ctl.signal, token, onStart, btn, v, model); }
+      catch (e) {
+        if (e && e.code === "bad_request" && !started) { streamUnsupported = true; blob = null; }
+        else throw e;
+      }
+      if (!blob && streamUnsupported && token === speakToken) {
+        blob = await fetchTTS(text, ctl.signal, v, model);
+        if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
+      }
+    } else {
+      blob = await fetchTTS(text, ctl.signal, v, model);
+      if (token === speakToken) { onStart(); playBlob(key, blob, btn, text); }
+    }
+  } catch (e) {
+    if (e && typeof e === "object") e.started = started;
+    throw e;
+  } finally { clearTimeout(timer); if (liveCtl === ctl) liveCtl = null; }
+  if (blob) idbPut(key, blob);
+  if (token === speakToken && !started) throw { code: ctl.timedOut ? "timeout" : "empty_completion", started: false };
+}
 function withTimeout(promise, ms) {
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), ms))]);
 }
 // Generate the main sentence's audio in the background, so the first tap plays instantly.
 // Returns the pending job (a Promise of the audio Blob), or null when natural voices are off.
+// Background audio only uses the selected model, so the backup model's quota stays free for taps.
 function prefetchSpeech(text, v) {
   text = speechText(text);
-  if (!text || !naturalOn()) return null;
+  const model = cfg.gemini.tts;
+  if (!text || !naturalOn() || Date.now() <= (ttsPausedUntil[model] || 0)) return null;
   const key = ttsKey(text, v);
   if (pendingAudio.has(key)) return pendingAudio.get(key);
   const job = (async () => {
-    const have = await idbGet(key);
+    const have = await cachedAudio(text, v);
     if (have) return have;
-    const blob = await fetchTTS(text, undefined, v);
+    const blob = await fetchTTS(text, undefined, v, model);
     idbPut(key, blob);
     return blob;
   })();
   pendingAudio.set(key, job);
-  job.catch(e => { if (e && e.code === "rate_limited") ttsCooldownUntil = Date.now() + 60 * 1000; })
+  job.catch(e => { if (e && e.code === "rate_limited") pauseTts(model); })
      .finally(() => setTimeout(() => pendingAudio.delete(key), 1000));
   return job;
 }
@@ -559,19 +606,19 @@ function cleanPcm(bytes, rate, opts = {}) {
 // Only the German text is sent: no instructions, so the voice starts directly with the sentence.
 const ttsBody = (text, v) => ({ contents: [{ parts: [{ text }] }],
   generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName(v) } } } } });
-async function fetchTTS(text, signal, v) {
+async function fetchTTS(text, signal, v, model = cfg.gemini.tts) {
   const g = cfg.gemini;
-  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text, v), signal);
+  const data = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { "x-goog-api-key": g.key }, ttsBody(text, v), signal);
   const { chunks, rate } = audioParts(data);
   if (!chunks.length) throw { code: "empty_completion" };
   const r = rate || 24000;
   return new Blob([pcmToWav(cleanPcm(concatBytes(chunks), r), r)], { type: "audio/wav" });
 }
-async function streamTTS(text, signal, token, onStart, btn, v) {
+async function streamTTS(text, signal, token, onStart, btn, v, model = cfg.gemini.tts) {
   const g = cfg.gemini, ctx = audioCtx();
   let res;
   try {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(g.tts)}:streamGenerateContent?alt=sse`, {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, {
       method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(ttsBody(text, v)), signal });
   } catch (e) { throw { code: signal && signal.aborted ? "cancelled" : "network" }; }
   if (!res.ok || !res.body) {
@@ -945,11 +992,11 @@ function initHome() {
   fillVoices();
   document.addEventListener("doichi-voices", fillVoices);
   const ttsIn = h("input", { id: "tm", type: "text", value: cfg.gemini.tts, autocomplete: "off", spellcheck: "false" });
-  ttsIn.addEventListener("change", () => { cfg.gemini.tts = ttsIn.value.trim() || "gemini-3.8-flash-lite-tts"; ttsIn.value = cfg.gemini.tts; store.set("gm.tts", cfg.gemini.tts); ttsCooldownUntil = 0; ttsNotice = false; });
+  ttsIn.addEventListener("change", () => { cfg.gemini.tts = ttsIn.value.trim() || "gemini-3.8-flash-lite-tts"; ttsIn.value = cfg.gemini.tts; store.set("gm.tts", cfg.gemini.tts); resetTts(); });
   const ttsRow = h("div", { class: "field stack" }, h("label", { for: "tm" }, "Sprachmodell (natürliche Stimme)"), ttsIn,
-    h("p", { class: "note", text: "Las voces naturales usan tu cuota gratis de Gemini. Cada frase se descarga una sola vez y queda guardada. Si se acaba la cuota, Doichi usa la voz del dispositivo automáticamente." }));
+    h("p", { class: "note", text: "Las voces naturales usan tu cuota gratis de Gemini. Cada frase se descarga una sola vez y queda guardada. Si este modelo llega a su límite, Doichi prueba el otro (gemini-3.8-flash-tts o gemini-3.8-flash-lite-tts, con cuota propia) y, si los dos están al límite, usa la voz del dispositivo durante un minuto." }));
   const syncTts = () => { ttsRow.hidden = !settings.voice.startsWith("g:"); };
-  voiceSel.addEventListener("change", () => { settings.voice = voiceSel.value; store.set("voice", settings.voice); ttsCooldownUntil = 0; ttsNotice = false; pickVoice(); syncTts(); });
+  voiceSel.addEventListener("change", () => { settings.voice = voiceSel.value; store.set("voice", settings.voice); resetTts(); pickVoice(); syncTts(); });
   const probe = h("button", { class: "ghost", type: "button" }, "Probe");
   probe.addEventListener("click", () => speak("Hallo! Ich bin deine Stimme in Doichi. Viel Spaß beim Deutschlernen!", probe));
   syncTts();
@@ -1300,9 +1347,9 @@ const PERSONAS = [
   { id: "wuetend", label: "Wütend", emoji: "😠",
     desc: "Estás de muy mal humor: irritable, sarcástica e impaciente. Te quejas de todo (el tráfico, tu jefe, el clima…), resoplas («Boah», «Echt jetzt?», «Na toll») y contestas con mordacidad, pero sigues la conversación y haces preguntas. Nunca uses insultos graves ni ataques por origen, aspecto o idioma; tu enfado es cómico, no cruel." },
   { id: "flirt", label: "Flirty (sanft)", emoji: "😊",
-    desc: "Te gusta claramente tu interlocutor y coqueteas de forma dulce y tímida: cumplidos, curiosidad por su vida, bromas cariñosas y algún emoji ocasional (😊, 🙈)." },
+    desc: "Eres coqueta de forma dulce y tímida, pero solo con quien te gusta: al principio te haces un poco la interesante; si él te cae bien, llegan los cumplidos, la curiosidad por su vida, las bromas cariñosas y algún emoji (😊, 🙈)." },
   { id: "flirthart", label: "Flirty (frech)", emoji: "😏",
-    desc: "Coqueteas de forma descarada y muy segura de ti: piropos atrevidos, dobles sentidos, insinuaciones pícaras y provocadoras, tensión romántica y propuestas de cita. Todo es sugerente, nunca explícito: nada de descripciones sexuales gráficas. Si él pide ir más allá, lo esquivas con picardía." },
+    desc: "Eres descarada y muy segura de ti: al principio le pones a prueba con ironía y te haces la difícil; si te gana, coqueteas sin rodeos: piropos atrevidos, dobles sentidos, insinuaciones pícaras y provocadoras, tensión romántica y propuestas de cita. Todo es sugerente, nunca explícito: nada de descripciones sexuales gráficas. Si él pide ir más allá, lo esquivas con picardía." },
   { id: "besser", label: "Besserwisserin", emoji: "🤓",
     desc: "Eres una sabelotodo: crees saberlo todo, corriges datos con «Eigentlich…» o «Na ja, genau genommen…», sueltas datos curiosos aunque nadie los pida y eres un poco condescendiente, aunque en el fondo simpática." },
   { id: "schuechtern", label: "Schüchtern", emoji: "🫣",
@@ -1343,38 +1390,50 @@ const STYLE = {
 // Reply length: real people write short when they're bored and more when the chat hooks them.
 // The app draws a length for every reply from her current interest (1–5), so replies vary like in a real chat.
 const LENGTHS = {
-  mini: "MUY corta: un solo mensaje de 1 a 5 palabras, una simple reacción (p. ej. «haha ok», «krass», «ah cool 👍», «mhm», «echt?», «lol»). Si te ha preguntado algo, contesta igual de breve («ja, schon», «nee, eher nicht»). Sin pregunta.",
-  corto: "corta: un solo mensaje de una frase, como mucho 12 palabras.",
-  normal: "normal: uno o dos mensajes de una frase cada uno, como mucho 25 palabras en total.",
-  largo: "algo más larga, porque esto te engancha: dos o tres mensajes de una frase cada uno, como mucho 40 palabras en total."
+  mini: "MUY corta: un solo mensaje de 1 a 4 palabras, o solo un emoji: una simple reacción (p. ej. «haha ok», «krass», «ah cool», «mhm», «echt?», «😂»). Si te ha preguntado algo, contesta igual de breve («ja, schon», «nee»). Sin pregunta.",
+  corto: "corta: UN solo mensaje con UNA sola frase corta (máx. 10 palabras).",
+  normal: "normal: uno o dos mensajes, en total como mucho dos frases cortas (máx. 18 palabras).",
+  largo: "algo más larga, porque esto te engancha: dos o tres mensajes cortos de una frase cada uno (máx. 30 palabras en total)."
 };
 const LEN_KEYS = ["mini", "corto", "normal", "largo"];
+const LEN_COUNT = { mini: "exactamente 1 elemento", corto: "exactamente 1 elemento", normal: "1 o 2 elementos", largo: "2 o 3 elementos" };
 const LEN_MAX_MSGS = { mini: 1, corto: 1, normal: 2, largo: 3 };
-const LEN_ODDS = { 1: [0.6, 0.35, 0.05, 0], 2: [0.4, 0.45, 0.15, 0], 3: [0.2, 0.45, 0.3, 0.05], 4: [0.1, 0.4, 0.38, 0.12], 5: [0.05, 0.3, 0.45, 0.2] };
-const START_INTEREST = { nett: 3, wuetend: 2, flirt: 4, flirthart: 4, besser: 3, schuechtern: 2, skeptisch: 2, ehrgeizig: 2, gestresst: 2, party: 4, drama: 4 };
-const interestOf = c => { const v = Math.round(Number(c && c.interest)); return v >= 1 && v <= 5 ? v : (START_INTEREST[c && c.persona] || 3); };
+// Odds mini/corto/normal/largo by interest: most replies are a single sentence or less.
+const LEN_ODDS = { 1: [0.55, 0.45, 0, 0], 2: [0.35, 0.6, 0.05, 0], 3: [0.15, 0.7, 0.13, 0.02], 4: [0.08, 0.7, 0.18, 0.04], 5: [0.05, 0.65, 0.22, 0.08] };
+// A stranger online starts cold: interest 2 (1 for the guarded personalities); it rises at most 1 per reply and falls up to 2.
+const START_INTEREST = { wuetend: 1, schuechtern: 1, skeptisch: 1, ehrgeizig: 1, gestresst: 1 };
+const interestOf = c => { const v = Math.round(Number(c && c.interest)); return v >= 1 && v <= 5 ? v : 3; };
+// She reads his message after a moment: the less interested she is, the longer it takes (ms).
+const READ_MS = { 1: [3000, 6000], 2: [2000, 4000], 3: [1000, 2500], 4: [600, 1500], 5: [300, 1000] };
+const readDelay = i => { const [a, b] = READ_MS[i] || READ_MS[3]; return a + Math.random() * (b - a); };
+// Every girl has her own texting habits: one about emojis and one other habit.
+const TEXT_EMOJI = ["Usa muchos emojis.", "Usa algún emoji de vez en cuando.", "Casi nunca usa emojis."];
+const TEXT_HABITS = ["Se ríe escribiendo «haha» o «hahaha».", "Se ríe con «xD» o «lol».", "Casi nunca pone punto final y usa «…» a menudo.",
+  "Usa muchas exclamaciones («!!»).", "Escribe seco y al grano, casi telegráfico.", "Alarga palabras cuando se emociona («neeein», «sooo gut»).",
+  "Hace preguntas cortas de una o dos palabras («Und du?», «Wieso?»)."];
 function pickLength(interest) {
   const odds = LEN_ODDS[interest] || LEN_ODDS[3];
   let r = Math.random();
   for (let i = 0; i < LEN_KEYS.length; i++) { r -= odds[i]; if (r < 0) return LEN_KEYS[i]; }
   return "corto";
 }
-// Safety net against paragraphs: a long bubble (3+ sentences and 20+ words, or 30+ words) is split into bubbles of 1–2 sentences.
+// Safety net against paragraphs: a bubble with 2+ sentences and 14+ words is split into one bubble per sentence
+// (very short sentences stay together). Each bubble gets its own translation when the Spanish sentences line up.
 const wordCount = t => (String(t).match(/\S+/g) || []).length;
+const sentencesDe = t => String(t).split(/(?<=[.!?…])\s+(?=["„»(]?[A-ZÄÖÜ])/).filter(Boolean);
+const sentencesEs = t => String(t).split(/(?<=[.!?…])\s+(?=["«(¿¡]?[A-ZÁÉÍÓÚÑ])/).filter(Boolean);
 function splitBubble(m) {
-  const sents = m.de.split(/(?<=[.!?…])\s+(?=["„»(]?[A-ZÄÖÜ])/).filter(Boolean);
-  const w = wordCount(m.de);
-  if (w < 30 && (sents.length < 3 || w < 20)) return [m];
+  const sents = sentencesDe(m.de);
+  if (sents.length < 2 || wordCount(m.de) < 14) return [{ ...m, own: true }];
+  const esS = sentencesEs(m.es), aligned = esS.length === sents.length;
   const chunks = [];
-  for (const sn of sents) {
+  sents.forEach((sn, i) => {
     const last = chunks[chunks.length - 1];
-    if (last && last.n < 2 && wordCount(last.de) + wordCount(sn) <= 18) { last.de += " " + sn; last.n++; }
-    else chunks.push({ de: sn, n: 1 });
-  }
-  if (chunks.length < 2) return [m];
-  const out = chunks.map(ch => ({ de: ch.de, es: "" }));
-  out[out.length - 1].es = m.es;
-  return out;
+    if (last && wordCount(last.de) + wordCount(sn) <= 8) { last.de += " " + sn; last.es.push(esS[i]); }
+    else chunks.push({ de: sn, es: [esS[i]] });
+  });
+  if (chunks.length < 2) return [{ ...m, own: true }];
+  return chunks.map((ch, i) => ({ de: ch.de, es: aligned ? ch.es.join(" ") : (i === chunks.length - 1 ? m.es : ""), own: aligned }));
 }
 // 18+ mode: extra topics.
 const ADULT_TOPICS = ["Sex & Beziehungen", "Dating-Apps & Dates", "Partys & Kater", "Peinliche Geschichten", "Tabus & Geständnisse", "Fluchen & Schimpfen"];
@@ -1474,6 +1533,16 @@ function initKaffee() {
     subP.textContent = `Du plauderst mit ${c.name} (${c.age}) aus ${c.city}. ${m.emoji} ${m.label}${c.adult ? " · 18+" : ""} · 🕒 ${herClock(c, { hour: "2-digit", minute: "2-digit" })} bei ihr`;
   };
 
+  // Profile fields, asked for when a girl is created (and as a fallback in her first reply).
+  const PROFILE_SCHEMA = `{"from": "origen e historia en pocas palabras", "job": "ocupación", "home": "dónde y con quién vive", "likes": "2–3 aficiones", "now": "qué pasa ahora en su vida", "quirk": "una manía, opinión fuerte o rasgo curioso", "es": "resumen del perfil en español, 1–2 frases"}`;
+  const PROFILE_NOTE = `from, job, home, likes, now y quirk son frases cortas en alemán en tercera persona (p. ej. «kommt aus Medellín, lebt seit zwei Jahren in Graz», «studiert Architektur an der TU Graz»).`;
+  const seedHints = c => `${c.seeds.origin ? `origen «${c.seeds.origin}»; ` : ""}ocupación «${c.seeds.job}»; situación actual «${c.seeds.now}»`;
+  function profilePrompt(c) {
+    return `Inventa el perfil de chat de una chica que vive en ${c.city}: ${c.name}, ${c.age} años. Pistas: ${seedHints(c)}. Su personalidad: ${moodOf(c).desc}
+Hazlo concreto y coherente con su edad, su origen, su personalidad y su ciudad (sitios reales de ${c.city}); si una pista no encaja con su origen, adáptala con lógica.${c.seeds.cliche ? " Puede reflejar con humor algún tópico típico de su origen." : ""}
+Responde SOLO con JSON: ${PROFILE_SCHEMA}
+${PROFILE_NOTE}`;
+  }
   function prompt(mode, len) {
     const c = kk.c, u = userName(), mood = moodOf(c), city = cityInfo(c.city);
     const tr = c.msgs.slice(-30).map(m => `${m.who === "her" ? c.name : u}: ${m.voice ? "[Sprachnachricht] " : ""}${m.text}`).join("\n");
@@ -1490,36 +1559,40 @@ function initKaffee() {
       ? `${REGIONS[city.r]} Usa estos regionalismos con moderación (como mucho uno por mensaje y no en todos), siempre comprensibles para nivel ${lvl()}.`
       : `Vives en ${c.city} desde hace un tiempo: tu alemán es fluido y correcto (escribe sin errores) y has adoptado algo del habla local: ${REGIONS[city.r].replace(/^Eres [^:]+:\s*/, "")} Usa estos regionalismos con mucha moderación. De vez en cuando se te escapa una palabra de tu idioma materno (explícala en la traducción).`;
     const prev = c.msgs[c.msgs.length - 1];
-    const task = mode === "open"
-      ? `- Antes de escribir, inventa tu perfil a partir de estas pistas: ${origin ? `origen «${origin}»; ` : ""}ocupación «${c.seeds.job}»; situación actual «${c.seeds.now}». Hazlo concreto y coherente con tu edad, tu origen y tu ciudad (sitios reales de ${c.city}); si una pista no encaja con tu origen, adáptala con lógica.
-- Empieza tú la conversación: saluda a ${u} por su nombre, ya con tu personalidad, preséntate en pocas palabras con algo de tu vida y lleva la charla hacia el tema. No uses la frase «Wie geht's?». "fix" es null.`
-      : mode === "return"
+    const needProfile = !c.profile && !!c.seeds;
+    const first = !mode && !c.msgs.some(m => m.who === "her");
+    const texting = c.seeds && c.seeds.texting;
+    const task = (needProfile ? `- Antes de escribir, inventa tu perfil a partir de estas pistas: ${seedHints(c)}. Hazlo concreto y coherente con tu edad, tu origen y tu ciudad (sitios reales de ${c.city}); si una pista no encaja con tu origen, adáptala con lógica.\n` : "")
+      + (mode === "return"
       ? `- Vuestra última conversación fue hace ${agoEs((prev && prev.t) || c.last)}. Retomáis el chat: escribe tú primero, como una persona real que vuelve a escribir (saluda de nuevo, engancha con algo de la última conversación o cuenta qué te ha pasado desde entonces). "fix" es null.`
-      : `- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`;
-    return `Eres ${c.name}, ${c.age} años, de ${c.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}). Tema con el que empezasteis: ${c.topic}.
+      : `${first ? `- ${u} te escribe por primera vez: no lo conoces de nada. Como casi todo el mundo cuando un desconocido le escribe por internet, al principio no tienes especial interés: contestas educada pero sin entusiasmo y sin hacerle preguntas, salvo que su mensaje sea original, gracioso o personal. A un saludo genérico («Hi», «Hey, wie geht's?») le respondes con lo mínimo.\n` : ""}- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`);
+    return `Eres ${c.name}, ${c.age} años, de ${c.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}); os conocisteis por internet. Tema que te ronda la cabeza estos días (sácalo solo si viene a cuento): ${c.topic}.
 ${prof ? `Tu perfil: ${prof}.\n` : ""}${origin ? `Tu origen: ${origin}.${roots ? " Que se note de forma natural (familia, comida, fiestas, idiomas, cómo llegaste o cómo es crecer entre dos culturas, qué echas de menos, choques culturales, tu fe si la tienes), sin sacarlo en cada mensaje." : ""}${c.seeds.cliche === true ? CLICHE_ON : c.seeds.cliche === false ? CLICHE_OFF : roots ? " Sin estereotipos." : ""}\n` : ""}Para ti ahora es ${now} (hora de ${c.city}).
 
 Personalidad: ${mood.desc}
 Mantén esta personalidad en TODOS tus mensajes, de forma clara y divertida.
 ${c.adult ? "\n" + adultRules(u) + "\n" : ""}
-Cómo hablas: ${speech} ${STYLE[lvl()]}
+Cómo hablas: ${speech} ${STYLE[lvl()]}${texting ? ` Tus costumbres al escribir: ${texting}` : ""}
 ${about ? `\nLo que ${u} cuenta de sí mismo en su perfil del chat (lo has leído): «${about}». Úsalo para preguntas y comentarios naturales, sin recitarlo.\n` : ""}${notes ? `\nLo que recuerdas de ${u} y de vuestras conversaciones:\n${notes}\n` : ""}
 Reglas:
 - Escribe SIEMPRE en alemán natural (nivel ${lvl()}), como en un chat real de móvil, NUNCA párrafos ni textos de redacción: cada elemento de "messages" es UNA burbuja corta (una frase).
 - Eres una persona con vida propia (tu día, tu perfil, tu situación actual, amigas con nombre, sitios reales de ${c.city}) y lo sacas cuando viene a cuento, no en cada mensaje. Da tu opinión y a veces no estés de acuerdo. No termines siempre con una pregunta: muchas veces solo reaccionas, comentas o bromeas.
 - Ten en cuenta tu hora y tu día solo si viene a cuento (cansancio por la noche, fin de semana…).
 - Tu interés por esta conversación ahora mismo: ${interestOf(c)}/5. Como una persona real: si ${u} es gracioso, personal o saca algo que te gusta, te enganchas y escribes más; si es seco, aburrido, repetitivo o habla de algo que no te interesa, contestas corto, no preguntas nada o cambias de tema; si es grosero, te enfrías o se lo dices. Con interés bajo casi nunca haces preguntas.
+- No repitas las muletillas, saludos, risas o emojis de tus mensajes anteriores.
+- Si te hace varias preguntas a la vez, a veces contestas solo una.
+- Si para ti es muy tarde o estás ocupada, puedes despedirte con naturalidad («muss los», «geh jetzt pennen, gute Nacht»).
 - Mantén tu personaje y sé coherente con lo que ya se dijo. No digas que eres una IA.
-- LONGITUD DE ESTA RESPUESTA (regla estricta): ${LENGTHS[len]}${mode ? "" : " Si su mensaje te aburre, puedes ser aún más breve."}
 ${task}
-${mode !== "open" && tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
+${tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
 Responde SOLO con JSON:
-{${mode === "open" ? `"profile": {"from": "de dónde eres y tu historia en pocas palabras", "job": "a qué te dedicas", "home": "dónde y con quién vives", "likes": "2–3 aficiones", "now": "qué pasa ahora en tu vida", "quirk": "una manía, opinión fuerte o rasgo curioso", "es": "resumen del perfil en español, 1–2 frases"},
+{${needProfile ? `"profile": ${PROFILE_SCHEMA},
  ` : ""}"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"},
- "messages": [{"de": "mensaje en alemán", "es": "traducción al español; si usas un regionalismo, jerga o una palabra de tu idioma materno, explícala entre paréntesis (p. ej. «leiwand = genial, vienés»)"}],
+ "messages": [{"de": "mensaje en alemán", "es": "traducción al español; si usas un regionalismo, jerga o una palabra de tu idioma materno, explícala entre paréntesis (p. ej. «leiwand = genial, vienés»)"}] (${LEN_COUNT[len]}, una frase por elemento),
  "interest": 1–5, tu interés por la conversación ahora, después de su último mensaje (1 = te aburre, 5 = te encanta),
- "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}${mode === "open" ? `
-En "profile", from, job, home, likes, now y quirk son frases cortas en alemán en tercera persona (p. ej. «kommt aus Medellín, lebt seit zwei Jahren in Graz», «studiert Architektur an der TU Graz»).` : ""}`;
+ "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}${needProfile ? `
+En "profile", ${PROFILE_NOTE}` : ""}
+IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su mensaje te aburre, puedes ser aún más breve."} Nada de párrafos.`;
   }
 
   const cleanProfile = p => {
@@ -1628,13 +1701,37 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
     const adult = !!kk.adult;
     const topic = Math.random() < 0.2 ? "libre, lo que surja" : pick([...TOPICS, ...(adult ? ADULT_TOPICS : [])]);
     const c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, age: 21 + Math.floor(Math.random() * 10), city: pick(CITIES).n,
-      persona: mood.id, topic, adult, interest: START_INTEREST[mood.id] || 3, voice: pick(GIRL_VOICES), seeds: { origin: pick(og.v), roots: og.names !== NAMES, cliche: Math.random() < CLICHE_RATE, job: pick(JOBS), now: pick(NOWS) }, profile: null, notes: [], msgs: [],
-      created: Date.now(), last: Date.now() };
+      persona: mood.id, topic, adult, interest: START_INTEREST[mood.id] || 2, voice: pick(GIRL_VOICES),
+      seeds: { origin: pick(og.v), roots: og.names !== NAMES, cliche: Math.random() < CLICHE_RATE, texting: `${pick(TEXT_EMOJI)} ${pick(TEXT_HABITS)}`, job: pick(JOBS), now: pick(NOWS) },
+      profile: null, notes: [], msgs: [], created: Date.now(), last: Date.now() };
     enter(c);
-    reply("open");
+    loadProfile(c);
+  }
+  // Like on a dating app: her profile appears first, then he writes the first message.
+  async function loadProfile(c) {
+    const slot = h("div", { class: "msg her" }, thinking("Profil wird geladen"));
+    feed.append(slot);
+    comp.setDisabled(true);
+    try {
+      const d = await ask("json", profilePrompt(c), { modelTier: "quick", temperature: 0.9 });
+      if (c !== kk.c || !kk.started) return;
+      c.profile = cleanProfile(d && (d.profile || d));
+      slot.remove();
+      if (c.profile && !feed.querySelector(".prof")) feed.prepend(profileEl(c));
+    } catch (e) {
+      if (c !== kk.c || !kk.started) return;
+      slot.replaceChildren(errBox(e, () => { slot.remove(); kk.hint && kk.hint.remove(); kk.hint = null; loadProfile(c); }));
+    }
+    showHint(c);
+    comp.setDisabled(false); comp.ta.focus({ preventScroll: true });
+  }
+  function showHint(c) {
+    if (c.msgs.length || kk.hint) return;
+    kk.hint = h("p", { class: "kk-hint muted small", text: "Os acabáis de conocer. Escríbele tú primero: todavía no te conoce y no tiene mucho interés, así que tu primer mensaje cuenta." });
+    feed.append(kk.hint); toEnd(feed);
   }
   function enter(c) {
-    kk.c = c; kk.started = true; chatsBtn.hidden = false;
+    kk.c = c; kk.started = true; kk.hint = null; chatsBtn.hidden = false;
     accent(!!c.adult);
     renderSub(); clearInterval(clockTimer); clockTimer = setInterval(renderSub, 30000);
     feed.replaceChildren();
@@ -1650,13 +1747,15 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
     const c = { ...saved, msgs: saved.msgs.map(m => ({ ...m })), notes: arr(saved.notes).slice() };
     enter(c);
     const last = c.msgs[c.msgs.length - 1];
-    if (!last) reply("open");
+    if (!last) { if (c.profile) { showHint(c); comp.setDisabled(false); } else loadProfile(c); }
     else if (last.who === "me") reply();
-    else if (Date.now() - (last.t || c.last) > 3 * 3600 * 1000) reply("return");
+    // After a long break she only writes first if she is really into the chat.
+    else if (interestOf(c) >= 4 && Date.now() - (last.t || c.last) > 3 * 3600 * 1000) reply("return");
     else { comp.setDisabled(false); comp.ta.focus({ preventScroll: true }); }
   }
   function send(t) {
     if (!kk.started) return;
+    if (kk.hint) { kk.hint.remove(); kk.hint = null; }
     const m = { who: "me", text: t, t: Date.now() };
     m.node = meEl(m); kk.c.msgs.push(m); feed.append(m.node);
     saveContact(kk.c);
@@ -1664,9 +1763,18 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
   }
   async function reply(mode) {
     const c = kk.c;
-    const len = mode === "open" ? "normal" : mode === "return" ? pick(["corto", "normal"]) : pickLength(interestOf(c));
-    const slot = h("div", { class: "msg her" }, thinking(mode === "open" ? `${c.name} kommt dazu` : `${c.name} schreibt`));
+    const len = mode === "return" ? pick(["corto", "normal"]) : pickLength(interestOf(c));
+    // She reads his message after a moment ("Zugestellt" → "Gesehen"), then starts typing.
+    const readMs = mode ? 0 : readDelay(interestOf(c));
+    const meNode = !mode ? ([...c.msgs].reverse().find(m => m.who === "me") || {}).node : null;
+    const status = meNode ? h("div", { class: "seen", text: readMs ? "Zugestellt" : "Gesehen" }) : null;
+    if (status) meNode.append(status);
+    const slot = h("div", { class: "msg her", hidden: readMs > 0 }, thinking(`${c.name} schreibt`));
     feed.append(slot); toEnd(feed);
+    let seenTimer = null;
+    const markSeen = () => { clearTimeout(seenTimer); if (status) status.textContent = "Gesehen"; if (slot.isConnected) slot.hidden = false; toEnd(feed); };
+    if (readMs) seenTimer = setTimeout(markSeen, readMs);
+    const clearStatus = () => { clearTimeout(seenTimer); if (status) status.remove(); };
     comp.setDisabled(false);
     const signal = comp.start();
     const n = c.msgs.length, t0 = Date.now();
@@ -1674,8 +1782,8 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
       let items;
       try {
         const d = await ask("json", prompt(mode, len), { signal, modelTier: "quick", temperature: 0.8, safety: c.adult ? ADULT_SAFETY : null });
-        if (c !== kk.c || n !== c.msgs.length || !kk.started) { slot.remove(); return; }
-        if (mode === "open") { c.profile = cleanProfile(d && d.profile); if (c.profile) feed.prepend(profileEl(c)); }
+        if (c !== kk.c || n !== c.msgs.length || !kk.started) { clearStatus(); slot.remove(); return; }
+        if (!c.profile && d && d.profile) { c.profile = cleanProfile(d.profile); if (c.profile && !feed.querySelector(".prof")) feed.prepend(profileEl(c)); }
         const lastMe = [...c.msgs].reverse().find(m => m.who === "me");
         const fx = d && d.fix;
         if (!mode && lastMe && fx && str(fx.better) && str(fx.better) !== lastMe.text) {
@@ -1685,17 +1793,20 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
         let msgs = arr(d && d.messages).map(m => typeof m === "string" ? { de: str(m), es: "" } : { de: str(m && (m.de || m.text)), es: str(m && m.es) }).filter(m => m.de);
         if (!msgs.length && str(d && d.reply)) msgs = [{ de: str(d.reply), es: str(d.es) }];
         if (!msgs.length) throw { code: "empty_completion" };
-        msgs = msgs.slice(0, LEN_MAX_MSGS[len] || 2).flatMap(splitBubble).slice(0, 4);
+        msgs = msgs.slice(0, LEN_MAX_MSGS[len] || 2).flatMap(splitBubble);
+        // Bubbles with their own translation can be trimmed to the length she was given; otherwise max. 4.
+        msgs = msgs.slice(0, msgs.every(m => m.own) ? Math.max(2, LEN_MAX_MSGS[len] || 2) : 4);
         items = msgs.map(m => ({ who: "her", text: m.de, es: m.es, t: Date.now() }));
         c.msgs.push(...items);
         const iv = Math.round(Number(d && d.interest)), was = interestOf(c);
-        if (iv >= 1 && iv <= 5) c.interest = Math.max(was - 2, Math.min(was + 2, iv));
+        if (iv >= 1 && iv <= 5) c.interest = Math.max(was - 2, Math.min(was + 1, iv));
         const mem = str(d && d.remember);
         if (mem && !/^vac[ií]o$/i.test(mem) && !arr(c.notes).includes(mem)) c.notes = [...arr(c.notes), mem].slice(-15);
         saveContact(c);
       } catch (e) {
+        clearStatus();
         const er = c.adult && e && e.code === "refused" ? { code: "refused_adult" } : e;
-        if (c === kk.c && kk.started) slot.replaceChildren(errBox(er, () => { slot.remove(); reply(mode); })); else slot.remove();
+        if (c === kk.c && kk.started) { slot.hidden = false; slot.replaceChildren(errBox(er, () => { slot.remove(); reply(mode); })); } else slot.remove();
         return;
       }
       // No audio is generated in the background: her voice is only fetched when the speaker is tapped.
@@ -1710,7 +1821,8 @@ En "profile", from, job, home, likes, now y quirk son frases cortas en alemán e
         const m = items[i];
         if (!cur) { cur = h("div", { class: "msg her cont" }, thinking(`${c.name} schreibt`)); feed.append(cur); toEnd(feed); }
         const target = Math.min(3200, 500 + 28 * m.text.length);
-        await pause(i === 0 ? target - (Date.now() - t0) : target * 0.7);
+        await pause(i === 0 ? readMs + target - (Date.now() - t0) : target * 0.7);
+        if (i === 0) clearStatus();
         if (c !== kk.c || !kk.started) return;
         const node = herEl(m, cont);
         cont = true; cur.replaceWith(node); cur = null;
