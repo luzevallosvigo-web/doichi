@@ -302,7 +302,9 @@ function pickVoice() {
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-// One shared <audio> element, unlocked by the first tap, so iPhone allows later playback (and plays even in silent mode).
+// One shared <audio> element. It is unlocked only when a speaker button is tapped (inside speak()), never by other taps:
+// claiming the audio makes iPhone pause other apps (Spotify, podcasts), so Doichi only does it when it is about to speak.
+// Once unlocked, later playback works and plays even in silent mode.
 const player = new Audio();
 player.preload = "auto";
 const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
@@ -314,8 +316,6 @@ function unlockPlayer() {
   unlocked = true;
   try { player.src = SILENT_WAV; const pr = player.play(); if (pr) pr.catch(() => { unlocked = false; }); } catch { unlocked = false; }
 }
-document.addEventListener("touchend", unlockPlayer, { capture: true, passive: true });
-document.addEventListener("click", unlockPlayer, { capture: true });
 
 let actx = null;
 function audioCtx() {
