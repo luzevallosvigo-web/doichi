@@ -225,6 +225,12 @@ mark.sm{background:var(--sca);color:inherit;border-radius:3px;padding:0 2px}
   <section id="kaffee" class="screen" hidden></section>
 </div>
 <script>
+// Shown at the end of Einstellungen, so you can see which version the phone is running.
+const APP_VERSION = "14.10.26b";
+// iPhone (Safari 17+): Doichi's voice mixes with other apps' audio instead of interrupting it, so Spotify keeps playing.
+// Trade-off of the "ambient" mode: iOS mutes Doichi completely while the silent switch is on.
+const AUDIO_MODE = "ambient";
+try { if (navigator.audioSession) navigator.audioSession.type = AUDIO_MODE; } catch {}
 "use strict";
 /* ---------- helpers ---------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -302,9 +308,8 @@ function pickVoice() {
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-// One shared <audio> element. It is unlocked only when a speaker button is tapped (inside speak()), never by other taps:
-// claiming the audio makes iPhone pause other apps (Spotify, podcasts), so Doichi only does it when it is about to speak.
-// Once unlocked, later playback works and plays even in silent mode.
+// One shared <audio> element. It is unlocked only when a speaker button is tapped (inside speak()), never by other taps.
+// With AUDIO_MODE "ambient" the voice plays on top of other apps' audio (Spotify keeps playing); iOS mutes it in silent mode.
 const player = new Audio();
 player.preload = "auto";
 const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
@@ -323,8 +328,8 @@ function audioCtx() {
     const C = window.AudioContext || window.webkitAudioContext;
     if (!C) return null;
     try { actx = new C(); } catch { return null; }
-    // iPhone: play even with the silent switch on (Safari 17+)
-    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+    // iPhone: keep mixing with other apps' audio (see AUDIO_MODE)
+    try { if (navigator.audioSession) navigator.audioSession.type = AUDIO_MODE; } catch {}
   }
   if (actx.state === "suspended") actx.resume().catch(() => {});
   return actx;
@@ -1019,7 +1024,8 @@ function initHome() {
       h("div", { class: "field" }, h("span", null, "Dein Niveau"), h("div", { class: "seg", role: "group", "aria-label": "Niveau" }, lvlBtns)),
       h("div", { class: "field" }, h("span", null, "Sprechtempo"), h("div", { class: "seg", role: "group", "aria-label": "Sprechtempo" }, segBtns)),
       voiceBox,
-      h("p", { class: "note", text: "Todo se guarda solo en este dispositivo. Con Gemini gratis, Google puede usar tus consultas para mejorar sus productos: no escribas datos privados." }))
+      h("p", { class: "note", text: "Todo se guarda solo en este dispositivo. Con Gemini gratis, Google puede usar tus consultas para mejorar sus productos: no escribas datos privados." }),
+      h("p", { class: "note", text: "Version " + APP_VERSION }))
   );
 }
 
