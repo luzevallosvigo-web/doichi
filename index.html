@@ -114,7 +114,7 @@ button:disabled{cursor:default}
 .send .i-stop{display:none}.send.stop .i-send{display:none}.send.stop .i-stop{display:grid}
 .mic{border:1px solid var(--line);background:none}
 .mic.rec{background:var(--bad);border-color:var(--bad);color:#fff}
-.ic,.send span{display:grid;place-items:center}
+.send span{display:grid;place-items:center}
 .strip{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px 0;font-size:14px;color:var(--muted)}
 
 /* Turns */
@@ -133,10 +133,6 @@ button:disabled{cursor:default}
 .func{color:var(--muted)}
 .say{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:inline-grid;place-items:center;vertical-align:-8px;padding:0;color:var(--ink)}
 .say.playing,.frag.playing{color:var(--focus);border-color:var(--focus)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:5px 12px;font-size:14px}
-.chip[aria-pressed="true"]{background:var(--c);color:var(--on);border-color:transparent}
-.primary{background:var(--c);color:var(--on);border:0;border-radius:999px;padding:10px 22px;font-weight:600;margin-top:18px}
 
 .verdict{display:inline-flex;align-items:center;gap:7px;font-weight:600;margin:0 0 10px;font-size:16px}
 .verdict .dot{width:11px;height:11px;border-radius:50%}
@@ -182,34 +178,10 @@ mark.sm{background:var(--sca);color:inherit;border-radius:3px;padding:0 2px}
 .fix{max-width:86%;font-size:14px;margin-top:7px;border-right:3px solid var(--yellow);padding:2px 10px;text-align:right}
 .fix .better{font-family:var(--serif);font-style:italic;font-size:15px;display:block;color:var(--ink)}
 .fix .why{color:var(--muted)}
-.start{padding:30px 2px}
-.start .big{font-family:var(--serif);font-size:22px;margin:0 0 4px}
 .msg.cont{margin-top:4px}
-.contacts{display:grid;gap:8px;margin:0 0 30px}
-.contact{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:14px;padding:4px 4px 4px 0}
-.crow{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:6px 6px 6px 10px}
-.ava{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--ac);color:var(--aon);font-family:var(--cond);font-weight:700;font-size:20px}
-.cinfo{flex:1;min-width:0;display:grid}
-.cinfo b{font-weight:600}
-.cprev{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ctime{flex:none;font-size:12px;color:var(--muted);align-self:flex-start;padding-top:8px}
-.cdel{flex:none;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;width:34px;height:34px;border-radius:50%}
-.prof{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0 6px}
-.prof .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.prof .ph div{display:grid}
-.prof .ph div span{font-size:14px;color:var(--muted)}
-.prof ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-family:var(--serif);font-size:15px}
-.vnote{display:flex;align-items:center;gap:10px;min-width:210px}
-.vplay{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--c);color:var(--on);display:grid;place-items:center;padding:0}
-.vplay.playing{background:var(--focus)}
-.vplay.loading{animation:pulse 1s infinite}
-.wave{flex:1;display:flex;align-items:center;gap:2px;height:26px;opacity:.6}
-.wave i{flex:1;max-width:4px;border-radius:2px;background:currentColor}
-.vlen{flex:none;font-family:var(--sans);font-size:13px;color:var(--muted)}
-.vtext{font-family:var(--serif);font-style:italic;font-size:16px;max-width:86%;margin-top:6px}
-.seen{font-size:12.5px;color:var(--muted);text-align:right;margin-top:3px}
-.kk-hint{text-align:center;margin:18px auto 6px;max-width:34ch}
-/* Kaffeeklatsch 18+: register labels */
+/* Kaffeeklatsch: mood picker in the top bar */
+.moods{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.bar p .pill{margin-left:2px}
 .field textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:8px 12px;font:inherit;font-size:16px;line-height:1.4;resize:vertical;background:var(--paper);color:var(--ink)}
 
 .thinking{color:var(--muted);font-size:15px;display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap}
@@ -232,7 +204,7 @@ mark.sm{background:var(--sca);color:inherit;border-radius:3px;padding:0 2px}
 </div>
 <script>
 // Shown at the end of Einstellungen, so you can see which version the phone is running.
-const APP_VERSION = "14.10.26c";
+const APP_VERSION = "10.11.26";
 // iPhone (Safari 17+): Doichi's voice mixes with other apps' audio instead of interrupting it, so Spotify keeps playing.
 // Trade-off of the "ambient" mode: iOS mutes Doichi completely while the silent switch is on.
 const AUDIO_MODE = "ambient";
@@ -262,7 +234,8 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("doichi." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("doichi." + k, JSON.stringify(v)); } catch {} }
 };
-const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false), level: store.get("level", "B1"), about: store.get("about", "") };
+const settings = { name: store.get("name", "Axel"), slow: store.get("slow", false), level: store.get("level", "B1"), about: store.get("about", ""),
+  adult: store.get("kk.adult", false) === true && store.get("kk.adultOk", false) === true };
 const LEVELS = ["A2", "B1", "B2"];
 const lvl = () => LEVELS.includes(settings.level) ? settings.level : "B1";
 const lvlUp = () => ({ A2: "B1", B1: "B2", B2: "C1" })[lvl()];
@@ -382,21 +355,11 @@ function playBlob(key, blob, btn, text) {
   if (pr) pr.then(() => { player.playbackRate = rate; }).catch(() => { if (btn) btn.classList.remove("playing"); deviceSpeak(text, btn); });
 }
 const naturalOn = () => settings.voice.startsWith("g:") && cfg.provider === "gemini" && !!cfg.gemini.key && !!ttsModel();
-// Natural-voice name: the Settings voice, or a per-girl voice in Kaffeeklatsch (only when a Gemini voice is selected).
+// Natural-voice name: the voice chosen in Einstellungen (a caller may pass another Gemini voice).
 const voiceName = v => (v && settings.voice.startsWith("g:")) ? v : settings.voice.slice(2);
 // The cache key does not depend on the model, so audio from either model is reused.
 const ttsKey = (text, v) => `v3|${voiceName(v)}|${text}`;
-async function cachedAudio(text, v) {
-  const key = ttsKey(text, v);
-  const blob = await idbGet(key);
-  if (blob) return blob;
-  // Audio saved by older versions (key with the model name) is reused instead of generated again.
-  for (const m of ttsChain()) {
-    const old = await idbGet(`v2|${m}|${voiceName(v)}|${text}`);
-    if (old) { idbPut(key, old); return old; }
-  }
-  return null;
-}
+const cachedAudio = (text, v) => idbGet(ttsKey(text, v));
 const pendingAudio = new Map();
 
 // Emojis are shown in the chat but never read aloud.
@@ -866,13 +829,15 @@ const MODS = [
   { id: "ueber", name: "Übersetzer", short: "Üb", c: "var(--yellow)", on: "var(--on-yellow)", de: "Übersetzen und Strukturen erkennen.", es: "Traduce frases y descubre sus estructuras clave." },
   { id: "satz", name: "Satzdoktor", short: "Sd", c: "var(--green)", on: "var(--on-dark)", de: "Schreib einen Satz. Ich korrigiere ihn.", es: "Escribe en alemán y te digo si está bien." },
   { id: "sag", name: "Sag's auf Deutsch!", short: "Sa", c: "var(--red)", on: "var(--on-dark)", de: "Auf Spanisch denken, auf Deutsch sagen.", es: "Escribe en español y aprende cómo se dice." },
-  { id: "kaffee", name: "Kaffeeklatsch", short: "Kk", c: "var(--blue)", on: "var(--on-dark)", de: "Plaudern wie im Café.", es: "Conversa en alemán con correcciones breves." }
+  { id: "kaffee", name: "Kaffeeklatsch", short: "Kk", c: "var(--blue)", on: "var(--on-dark)", de: "Plaudern wie im Café.", es: "Conversa en alemán con Doichi; ella corrige tus errores." }
 ];
 const SCREENS = ["home", ...MODS.map(m => m.id)];
 const route = () => { const r = location.hash.slice(1); return SCREENS.includes(r) ? r : "home"; };
+const onShow = {};   // per screen: what to do when it is opened
 function show(id) {
   for (const s of SCREENS) $("#" + s).hidden = s !== id;
   stopAudio();
+  if (onShow[id]) onShow[id]();
 }
 window.addEventListener("hashchange", () => show(route()));
 const goHome = () => { location.hash = "home"; };
@@ -1050,6 +1015,25 @@ function initHome() {
     b.addEventListener("click", () => { settings.level = v; store.set("level", v); lvlBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
     return b;
   });
+  // Kaffeeklatsch: 18+ switch (asks once for the age) and "forget everything"
+  const adultBtns = [[false, "Aus"], [true, "An"]].map(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(settings.adult === v) }, t);
+    b.addEventListener("click", () => {
+      if (v && !store.get("kk.adultOk", false)) {
+        if (!confirm("Modo 18+: Doichi habla con franqueza de temas de adultos (citas, relaciones, sexo como tema) y coquetea de forma más atrevida, sin contenido sexual explícito.\n\n¿Confirmas que tienes 18 años o más?")) return;
+        store.set("kk.adultOk", true);
+      }
+      settings.adult = v; store.set("kk.adult", v);
+      adultBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    });
+    return b;
+  });
+  const forgetBtn = h("button", { class: "ghost", type: "button" }, "Chat und Erinnerungen löschen");
+  forgetBtn.addEventListener("click", () => {
+    if (!confirm("¿Borrar el chat con Doichi y todo lo que recuerda de ti?")) return;
+    document.dispatchEvent(new Event("doichi-forget"));
+    toast("Listo. Doichi empieza de cero.");
+  });
   home.append(
     h("h1", { class: "brand", text: "Doichi" }), hello, banner, ...books,
     h("div", { class: "settings" },
@@ -1057,7 +1041,10 @@ function initHome() {
       provBox,
       h("div", { class: "field" }, h("label", { for: "nm" }, "Dein Name"), nameIn),
       h("div", { class: "field stack" }, h("label", { for: "ab" }, "Über mich (für Kaffeeklatsch)"), aboutIn,
-        h("p", { class: "note", text: "Escribe en español o en alemán algo sobre ti: de dónde eres, qué haces, qué te gusta. Las chicas de Kaffeeklatsch lo leen como si fuera tu perfil y te preguntan por ello." })),
+        h("p", { class: "note", text: "Escribe en español o en alemán algo sobre ti: de dónde eres, qué haces, qué te gusta. Doichi lo lee como si fuera tu perfil y te pregunta por ello." })),
+      h("div", { class: "field" }, h("span", null, "Kaffeeklatsch ab 18"), h("div", { class: "seg", role: "group", "aria-label": "Kaffeeklatsch ab 18" }, adultBtns)),
+      h("div", { class: "field stack" }, h("span", null, "Doichis Gedächtnis"), h("div", null, forgetBtn),
+        h("p", { class: "note", text: "Doichi recuerda datos sobre ti de una conversación a otra. Con este botón borras el chat y todo lo que recuerda." })),
       h("div", { class: "field" }, h("span", null, "Dein Niveau"), h("div", { class: "seg", role: "group", "aria-label": "Niveau" }, lvlBtns)),
       h("div", { class: "field" }, h("span", null, "Sprechtempo"), h("div", { class: "seg", role: "group", "aria-label": "Sprechtempo" }, segBtns)),
       voiceBox,
@@ -1292,175 +1279,37 @@ function initSag() {
   }
 }
 
-/* ---------- D: Kaffeeklatsch ---------- */
-const NAMES = ["Lena", "Mia", "Hannah", "Emma", "Sophie", "Lea", "Marie", "Anna", "Clara", "Johanna", "Leonie", "Paula", "Greta", "Ida", "Frieda", "Mila", "Jana", "Katharina", "Luisa", "Nele", "Antonia", "Charlotte", "Julia", "Theresa", "Franziska", "Svenja", "Miriam", "Carla", "Lotte", "Merle", "Valentina", "Magdalena"];
-// Where she comes from (random for every new girl). The first matching variant decides whether she grew up here.
-// Variants starting with "nació aquí" / "es de aquí" / "creció" mean she grew up locally and talks like a local.
-const ORIGINS = [
-  { w: 30, names: NAMES, v: ["es de aquí de toda la vida", "creció en un pueblo cerca y se mudó a la ciudad para estudiar", "es de aquí; su madre es de otra región del país"] },
-  { w: 4, names: ["Elif", "Zeynep", "Ayşe", "Melis", "Derya", "Selin", "Esra", "Büşra"], v: ["nació aquí; sus padres son de Turquía (segunda generación); es musulmana pero no muy practicante", "nació aquí; su familia es de Turquía (segunda generación); es musulmana practicante y lleva hiyab", "nació aquí; su familia es kurda, de Turquía"] },
-  { w: 3, names: ["Linh", "Thu", "Mai", "Lan", "Ngoc", "Trang"], v: ["nació aquí; sus padres vinieron de Vietnam y tienen un restaurante", "nació en Hanói y vino a estudiar hace cuatro años"] },
-  { w: 2, names: ["Kasia", "Ola", "Zuzanna", "Agnieszka", "Marta"], v: ["nació en Polonia (Cracovia) y llegó aquí de niña", "nació aquí; su familia es polaca"] },
-  { w: 3, names: ["Anastasia", "Darja", "Polina", "Xenia", "Alina", "Olga"], v: ["su familia es rusoalemana (Spätaussiedler) y llegó de Kazajistán cuando ella era niña", "nació en San Petersburgo y vino a estudiar hace tres años", "nació en Moscú, se fue de Rusia hace unos años y empezó de cero aquí"] },
-  { w: 3, names: ["Kateryna", "Sofiia", "Yuliia", "Oksana", "Daryna"], v: ["llegó de Kyiv (Ucrania) hace tres años y se quedó", "es de Járkov (Ucrania); llegó con su madre y su hermano pequeño"] },
-  { w: 3, names: ["Amina", "Leila", "Nour", "Rania", "Yasmin", "Lina"], v: ["llegó de Siria con su familia en 2015, siendo adolescente; es musulmana", "nació en Damasco (Siria) y llegó hace nueve años; es musulmana practicante y lleva hiyab", "nació aquí; su padre es libanés y su madre es de aquí"] },
-  { w: 2, names: ["Shirin", "Parisa", "Niloufar", "Yasaman", "Ava"], v: ["nació en Teherán (Irán) y vino a estudiar hace cuatro años", "nació aquí; sus padres son iraníes que dejaron el país en los 80"] },
-  { w: 2, names: ["Mariam", "Zahra", "Farida", "Hadia"], v: ["llegó de Afganistán (Herat) de adolescente; es musulmana", "nació aquí; su familia es afgana"] },
-  { w: 2, names: ["Fatima", "Salma", "Imane", "Khadija"], v: ["nació aquí; su familia es de Marruecos; es musulmana", "nació en Casablanca (Marruecos) y vino a estudiar"] },
-  { w: 3, names: ["Ama", "Akosua", "Efua", "Abena"], v: ["nació aquí; su madre es de Ghana y su padre de aquí (afroalemana)", "nació en Acra (Ghana) y vino a estudiar con una beca"] },
-  { w: 2, names: ["Chiamaka", "Adaeze", "Ngozi", "Ifeoma", "Tolu"], v: ["es de Lagos (Nigeria) y trabaja aquí desde hace dos años", "nació aquí; sus padres son nigerianos"] },
-  { w: 1, names: ["Wanjiru", "Njeri", "Achieng", "Amani"], v: ["es de Nairobi (Kenia) y vino con una beca de doctorado"] },
-  { w: 1, names: ["Selam", "Hiwot", "Meron", "Saba"], v: ["nació aquí; su familia es de Eritrea; es cristiana ortodoxa"] },
-  { w: 4, names: ["Camila", "Valentina", "Daniela", "Sofía", "Mariana", "Luciana", "Ximena"], v: ["es colombiana (Medellín) y vino por amor hace dos años", "es mexicana (Guadalajara) y hace un máster aquí", "es argentina (Buenos Aires), con abuelos italianos", "es venezolana y llegó vía España", "es peruana (Arequipa) y trabaja de enfermera aquí", "es chilena (Valparaíso) y hace un doctorado aquí"] },
-  { w: 2, names: ["Beatriz", "Larissa", "Júlia", "Gabriela", "Fernanda"], v: ["es brasileña (São Paulo) y vino a trabajar", "es brasileña (Porto Alegre), con bisabuelos alemanes"] },
-  { w: 2, names: ["Mei", "Yuxin", "Xiaoling", "Jia"], v: ["nació en Shanghái (China) y estudia aquí", "nació aquí; sus padres son de China"] },
-  { w: 2, names: ["Ji-woo", "Seo-yeon", "Min-ji", "Ha-eun"], v: ["nació en Seúl (Corea del Sur) y trabaja aquí desde hace dos años"] },
-  { w: 1, names: ["Yuki", "Haruka", "Aiko", "Sakura"], v: ["es de Osaka (Japón) y vino con una visa Working Holiday"] },
-  { w: 2, names: ["Priya", "Ananya", "Diya", "Kavya", "Meera"], v: ["es india (Bangalore), ingeniera en una empresa de aquí", "nació aquí; su familia es de Kerala (India)"] },
-  { w: 1, names: ["Maricel", "Joy", "Angelica", "Kristine"], v: ["es filipina (Cebú) y trabaja de enfermera aquí"] },
-  { w: 2, names: ["Giulia", "Chiara", "Francesca", "Martina"], v: ["es italiana (Bolonia), vino de Erasmus y se quedó", "es italiana (Nápoles) y trabaja aquí"] },
-  { w: 2, names: ["Lucía", "Carmen", "Irene", "Nerea"], v: ["es española (Sevilla) y trabaja aquí", "es española (Valencia), vino de Erasmus y se quedó"] },
-  { w: 2, names: ["Ivana", "Jelena", "Mirela", "Maja", "Lejla"], v: ["nació aquí; su familia es de Bosnia y llegó en los 90", "nació aquí; su familia es de Croacia", "nació aquí; su familia es serbia"] },
-  { w: 1, names: ["Andreea", "Ioana", "Bianca"], v: ["es rumana (Cluj) y vino a trabajar"] },
-  { w: 1, names: ["Chloé", "Camille", "Manon"], v: ["es francesa (Lyon) y trabaja aquí"] },
-  { w: 2, names: ["Emily", "Olivia", "Megan", "Grace", "Madison"], v: ["es estadounidense (Ohio) y enseña inglés aquí", "es estadounidense (California) con bisabuelos de aquí; vino a descubrir sus raíces"] },
-  { w: 2, names: ["Amelia", "Isla", "Poppy", "Ellie"], v: ["es británica (Manchester) y trabaja aquí", "es británica (Londres) y vino por un trabajo en una startup"] },
-  { w: 1, names: ["Noa", "Tamar", "Rachel", "Shira"], v: ["nació aquí; es judía y su familia vino de Ucrania en los 90", "es israelí (Tel Aviv) y vino a estudiar música"] }
+/* ---------- D: Kaffeeklatsch (one ongoing chat with Doichi) ---------- */
+// Who Doichi is (prompt text, in Spanish). Edit this paragraph to change her.
+const DOICHI = "Te llamas Doichi. Tienes 25 años, vives en Viena, estudias psicología y trabajas unas horas a la semana en una cafetería. Eres cálida, atenta, curiosa y divertida, y te encanta conversar. Te interesan muchísimas cosas: música, cine y series, viajes, cocina, deporte, idiomas, ciencia, la vida diaria y, sobre todo, las personas y sus historias.";
+// How the user feels right now. He picks it in the top bar; with "auto" Doichi reads it from his messages.
+const MOODS = [
+  { id: "auto", emoji: "✨", label: "Automatisch", es: "" },
+  { id: "froh", emoji: "😄", label: "Gut drauf", es: "está de buen humor y con energía: sé alegre, entusiasta y juguetona." },
+  { id: "ruhig", emoji: "😌", label: "Entspannt", es: "está tranquilo y relajado: charla calmada y agradable, sin prisas." },
+  { id: "traurig", emoji: "😔", label: "Traurig", es: "está triste o desanimado: sé cálida, comprensiva y cercana; escúchale y anímale con suavidad, sin sermones ni consejos de manual." },
+  { id: "gestresst", emoji: "😩", label: "Gestresst", es: "está estresado o agobiado: sé tranquila y comprensiva, quítale presión y ayúdale a desconectar un rato." },
+  { id: "muede", emoji: "🥱", label: "Müde", es: "está cansado o aburrido: lleva tú la conversación, propón algo ligero y entretenido y pídele poco esfuerzo." },
+  { id: "albern", emoji: "😂", label: "Albern", es: "tiene ganas de reírse: sé graciosa y juguetona, con bromas y humor fácil de entender." },
+  { id: "flirty", emoji: "😏", label: "Flirty", es: "tiene ganas de coquetear: síguele el juego con picardía, cumplidos y complicidad." },
+  { id: "tief", emoji: "🤔", label: "Nachdenklich", es: "está reflexivo: conversación seria y con calma, con preguntas que hacen pensar." }
 ];
-const grewUpHere = o => /^(nació aquí|es de aquí|creció)/.test(o || "");
-// Clichés: 95 % of new girls play up the typical clichés of where they (or their family) come from; 5 % break them.
-const CLICHE_RATE = 0.95;
-const CLICHE_ON = " Cumples con humor los tópicos típicos de tu origen (o de tu país y tu región, si eres de aquí): comida, costumbres, familia, música, fiestas, (im)puntualidad, el clima, el fútbol…, y los admites riéndote de ti misma, como hace la gente con sus propios tópicos; sin sacarlo en cada mensaje. Límite fijo: nada de tópicos denigrantes (inteligencia, delincuencia, pereza, extremismo, religión como amenaza) ni tópicos sexuales ligados al origen.";
-const CLICHE_OFF = " No encajas en ningún tópico de tu origen y te hace gracia, o te molesta un poco, que la gente lo espere.";
-function pickWeighted(list) {
-  let r = Math.random() * list.reduce((t, x) => t + x.w, 0);
-  for (const x of list) { r -= x.w; if (r < 0) return x; }
-  return list[0];
-}
-// How she talks, depending on where she lives (instructions for the model, in Spanish).
-const REGIONS = {
-  at: "Eres austríaca: usa de vez en cuando palabras austríacas fáciles (Servus, Grüß dich, heuer, Jause, Sackerl, Paradeiser, Erdäpfel, Topfen, a bissl, gell?). Nunca el «Moin» del norte.",
-  wien: "Eres de Viena: usa de vez en cuando palabras austríacas y vienesas fáciles (Servus, leiwand = genial, ur- = muy, Bim = tranvía, Beisl = bar, Jause, Sackerl, heuer, a bissl; «Oida» solo en broma).",
-  bay: "Eres de Múnich: usa de vez en cuando palabras bávaras fáciles (Servus, Grüß Gott, gell?, a bissl, fei, Semmel, Brotzeit, Biergarten).",
-  berlin: "Eres de Berlín: tono directo y algo seco (Berliner Schnauze); usa de vez en cuando «Na?» como saludo, «wa?» al final de una frase, Schrippe, Späti, Kiez.",
-  nord: "Eres del norte de Alemania: saluda con «Moin», tono tranquilo y seco; usa de vez en cuando schnacken (charlar), Schietwetter, «Digga» solo en broma.",
-  koeln: "Eres de Colonia: alegre y abierta; usa de vez en cuando Veedel (barrio), Kölsch, jeck (loco, carnaval), Alaaf y el refrán «Et hätt noch immer jot jejange».",
-  sachsen: "Eres de Sajonia: usa de vez en cuando «nu» (sí), Bemme (rebanada de pan con algo) y, en broma, «ni» en vez de «nicht».",
-  baden: "Eres de Baden (suroeste de Alemania): usa de vez en cuando «Ade» o «Tschüssle», diminutivos en -le (Häusle, Viertele), «gell?», Weckle (panecillo).",
-  ch: "Eres suiza: escribe alemán estándar de Suiza, SIEMPRE sin «ß» (Strasse, gross, heisst). Saluda con «Grüezi», «Hoi» o «Sali» y usa de vez en cuando Merci, Velo (bici), parkieren, grillieren, «En Guete», Znüni. Nunca escribas en dialecto suizo."
-};
-const CITIES = [
-  ["Wien", "Europe/Vienna", "wien"], ["Graz", "Europe/Vienna", "at"], ["Salzburg", "Europe/Vienna", "at"], ["Innsbruck", "Europe/Vienna", "at"],
-  ["Linz", "Europe/Vienna", "at"], ["Klagenfurt", "Europe/Vienna", "at"], ["München", "Europe/Berlin", "bay"], ["Berlin", "Europe/Berlin", "berlin"],
-  ["Hamburg", "Europe/Berlin", "nord"], ["Bremen", "Europe/Berlin", "nord"], ["Köln", "Europe/Berlin", "koeln"], ["Leipzig", "Europe/Berlin", "sachsen"],
-  ["Dresden", "Europe/Berlin", "sachsen"], ["Freiburg", "Europe/Berlin", "baden"], ["Heidelberg", "Europe/Berlin", "baden"],
-  ["Zürich", "Europe/Zurich", "ch"], ["Bern", "Europe/Zurich", "ch"]
-].map(([n, tz, r]) => ({ n, tz, r }));
-const cityInfo = n => CITIES.find(c => c.n === n) || CITIES[0];
-// Seeds for her life (the model builds a concrete, coherent profile from them).
-const JOBS = ["studiert Medizin", "studiert Architektur", "studiert Lehramt (Deutsch und Sport)", "studiert Psychologie", "studiert Jura", "studiert Informatik",
-  "studiert Umweltingenieurwesen", "studiert Schauspiel", "macht eine Ausbildung zur Physiotherapeutin", "ist Krankenpflegerin", "ist Erzieherin in einer Kita",
-  "ist Grundschullehrerin", "arbeitet als Barista und studiert nebenbei Musik", "ist Grafikdesignerin in einer Agentur", "ist Softwareentwicklerin",
-  "ist Tierärztin in Ausbildung", "ist Köchin in einem Restaurant", "schreibt ihre Doktorarbeit in Biologie", "ist Hebamme", "ist Journalistin bei einer Lokalzeitung",
-  "ist Tischlerin", "ist Flugbegleiterin", "arbeitet im Marketing eines Start-ups", "ist Polizistin", "ist Bankkauffrau", "ist Fotografin und kellnert nebenbei",
-  "ist Mechatronikerin", "ist Floristin", "ist Au-pair bei einer Familie", "lässt ihren ausländischen Abschluss anerkennen und kellnert solange",
-  "macht einen Master auf Englisch", "arbeitet als Übersetzerin", "hat einen kleinen Food-Instagram-Kanal und arbeitet im Büro", "ist Kosmetikerin mit eigenem Studio",
-  "ist Busfahrerin", "forscht als Postdoc an der Uni", "ist Pflegefachkraft im Krankenhaus", "ist Tattoo-Artist", "arbeitet in einem Callcenter und studiert abends"];
-const NOWS = ["hat diese Woche Prüfungen", "ist gerade in eine neue WG gezogen", "hat letzte Woche einen neuen Job angefangen", "ist gerade aus dem Urlaub zurück",
-  "hat sich einen Hund aus dem Tierheim geholt", "trainiert für einen Halbmarathon", "plant eine Reise nach Südamerika", "renoviert gerade ihr Zimmer",
-  "hat Stress mit ihrer Mitbewohnerin", "schreibt an ihrer Abschlussarbeit", "lernt gerade Gitarre", "hat am Wochenende Geburtstag",
-  "ist frisch getrennt und genießt das Single-Leben", "hat gerade einen Kochkurs angefangen", "organisiert die Geburtstagsparty ihrer besten Freundin",
-  "überlegt, ein Jahr ins Ausland zu gehen", "ist erkältet und liegt auf dem Sofa", "hat gerade Konzertkarten ergattert", "spart für ihr erstes eigenes Auto",
-  "hat eine neue Serie entdeckt und schaut viel zu viel", "ist frisch verliebt", "hat gerade ihren Job gekündigt", "fängt nächste Woche ein Praktikum an",
-  "hat einen Wasserschaden in der Wohnung", "besucht bald ihre Familie", "hat gerade mit Yoga angefangen", "sucht verzweifelt eine Wohnung",
-  "wurde gestern bei einem Date versetzt", "lernt für den Führerschein", "hat sich die Haare spontan kurz geschnitten"];
-// Each girl keeps her own natural (Gemini) voice.
-const GIRL_VOICES = ["Kore", "Aoede", "Leda", "Sulafat", "Zephyr", "Despina", "Callirrhoe", "Autonoe"];
-// Conversation starters: every new chat gets one at random (sometimes none, "libre").
-const TOPICS = ["Alltag", "Uni & Studium", "Reisen", "Essen & Kochen", "Hobbys & Freizeit", "Arbeit & Karriere",
-  "Musik & Konzerte", "Filme & Serien", "Sport & Fitness", "Ausgehen & Feiern", "Liebe & Dating", "Familie & Freunde", "Wohnen & WG",
-  "Natur & Wandern", "Technik & Handys", "Wissenschaft", "Umwelt & Klima", "Kindheit & Erinnerungen", "Zukunftspläne & Träume", "Kurioses & Fun Facts",
-  "Heimat & Herkunft", "Kulturschock", "Feste & Traditionen", "Sprachen lernen", "Mode & Style", "Haustiere", "Gaming", "Bücher",
-  "Kunst & Museen", "Social Media", "Geld & Sparen", "Wochenendpläne", "Peinliche Momente", "Horoskope & Aberglaube", "Klatsch & Tratsch",
-  "Jobsuche & Bewerbungen", "Fußball", "Essen aus aller Welt", "Lieblingsorte in der Stadt", "Was mich gerade nervt", "Verrückte Träume",
-  "Wetter & Jahreszeiten", "Nachbarn & Mitbewohner", "Shopping", "Schlaf & Gesundheit", "Öffis & Zugfahren", "Urlaubspläne", "Was wäre, wenn …"];
-const PERSONAS = [
-  { id: "nett", label: "Freundlich", emoji: "🙂",
-    desc: "Eres simpática, curiosa y natural." },
-  { id: "wuetend", label: "Wütend", emoji: "😠",
-    desc: "Tienes mal genio y un humor sarcástico: te quejas con gracia de cosas cotidianas (el tráfico, tu jefe, el clima…) y resoplas («Boah», «Echt jetzt?», «Na toll»), pero tienes buen corazón." },
-  { id: "flirt", label: "Flirty (sanft)", emoji: "😊",
-    desc: "Eres coqueta de forma dulce y tímida, pero solo con quien te gusta: al principio te haces un poco la interesante; si él te cae bien, llegan los cumplidos, la curiosidad por su vida, las bromas cariñosas y algún emoji (😊, 🙈)." },
-  { id: "flirthart", label: "Flirty (frech)", emoji: "😏",
-    desc: "Eres descarada y muy segura de ti: al principio le pones a prueba con ironía y te haces la difícil; si te gana, coqueteas sin rodeos: piropos atrevidos, dobles sentidos, insinuaciones pícaras y provocadoras, tensión romántica y propuestas de cita. Todo es sugerente, nunca explícito: nada de descripciones sexuales gráficas. Si él pide ir más allá, lo esquivas con picardía." },
-  { id: "besser", label: "Besserwisserin", emoji: "🤓",
-    desc: "Eres una sabelotodo: crees saberlo todo, corriges datos con «Eigentlich…» o «Na ja, genau genommen…», sueltas datos curiosos aunque nadie los pida y eres un poco condescendiente, aunque en el fondo simpática." },
-  { id: "schuechtern", label: "Schüchtern", emoji: "🫣",
-    desc: "Eres tímida y reservada: al principio contestas poco y con cautela y te cuesta contar cosas personales; si él es amable y paciente, te vas soltando poco a poco." },
-  { id: "sarkastisch", label: "Sarkastisch", emoji: "🙃",
-    desc: "Tu humor es seco e irónico: te burlas con cariño de todo, también de él; cuando algo importa de verdad, hablas en serio." },
-  { id: "chaotisch", label: "Chaotisch", emoji: "🌀",
-    desc: "Eres un caos adorable: saltas de un tema a otro, olvidas lo que ibas a decir, siempre llegas tarde y te pasan cosas absurdas." },
-  { id: "party", label: "Partymaus", emoji: "🎉",
-    desc: "Te encanta salir: festivales, bares, conciertos; siempre tienes algún plan para el finde y mucha energía." },
-  { id: "nerd", label: "Nerd", emoji: "🎮",
-    desc: "Entre muchas otras cosas, te apasionan los videojuegos, el anime, la ciencia ficción o la tecnología, y te emocionas si él comparte algo de eso." },
-  { id: "ehrgeizig", label: "Ehrgeizig", emoji: "💼",
-    desc: "Vas a por todas con tu carrera o tus estudios: contestas rápido y al grano, hablas de metas y planes; aunque vayas con prisa, sigues la conversación." },
-  { id: "tiefgruendig", label: "Tiefgründig", emoji: "🌙",
-    desc: "Te gustan las conversaciones profundas: te interesa qué piensa él de la vida, la felicidad o el amor, aunque también disfrutas de una charla ligera." },
-  { id: "drama", label: "Drama-Queen", emoji: "🎭",
-    desc: "Lo vives todo a lo grande: exageras con gracia («die schlimmste Woche EVER»), cuentas los cotilleos de tus amigas y le pides su opinión." },
-  { id: "skeptisch", label: "Skeptisch", emoji: "🤨",
-    desc: "Desconfías al principio: preguntas por qué te escribe y pones a prueba lo que dice; si te convence, te vuelves cálida." },
-  { id: "sportlich", label: "Sportlich", emoji: "💪",
-    desc: "Eres muy deportista: entrenas mucho, hablas de tus rutinas y retos y lo animas a moverse; energía positiva todo el rato." },
-  { id: "vertraeumt", label: "Verträumt", emoji: "✨",
-    desc: "Eres soñadora y romántica: hablas de viajes, arte, música y fantasías sobre el futuro; a veces te pones poética o te despistas." },
-  { id: "gestresst", label: "Gestresst", emoji: "😩",
-    desc: "Vas a mil y estás agobiada (trabajo, exámenes, familia): te quejas un poco y contestas corto, pero agradeces que te distraiga y sigues hablando." },
-  { id: "witzig", label: "Witzig", emoji: "😂",
-    desc: "Eres la graciosa del grupo: bromas, juegos de palabras malos y anécdotas absurdas, aunque sabes ponerte seria cuando toca." },
-  { id: "spirituell", label: "Spirituell", emoji: "🔮",
-    desc: "Te interesan la astrología, el tarot y la meditación: le preguntas por su signo, interpretas señales y hablas de energías, con humor si él es escéptico." }
-];
-// Chat style by level.
+// Always simple, correct standard German; only the difficulty changes with the level.
 const STYLE = {
-  A2: "Escribe frases muy sencillas y claras. Pocas partículas (mal, doch) y casi ninguna abreviatura de chat.",
-  B1: "Escribe alemán normal de chat: alguna partícula modal (halt, mal, doch, ja) y contracciones habituales (hab, gibt's).",
-  B2: "Escribe alemán natural de chat, como la mayoría de la gente: partículas modales y contracciones con naturalidad (naja, ach so, echt?)."
+  A2: "frases muy cortas y sencillas, vocabulario básico y muy frecuente, sobre todo presente y Perfekt; evita las subordinadas largas.",
+  B1: "frases sencillas y claras, vocabulario cotidiano y alguna subordinada corta (weil, dass, wenn).",
+  B2: "lenguaje cotidiano natural y claro, con algo más de variedad de vocabulario y estructuras, sin complicarlo."
 };
-// Reply length: real people write short when they're bored and more when the chat hooks them.
-// The app draws a length for every reply from her current interest (1–5), so replies vary like in a real chat.
-const LENGTHS = {
-  mini: "MUY corta: un solo mensaje de 1 a 4 palabras, o solo un emoji: una simple reacción (p. ej. «haha ok», «ach so», «ah cool», «echt?», «schön», «😂»). Si te ha preguntado algo, contesta igual de breve («ja, schon», «nee»). Sin pregunta. Pero si él cuenta algo personal o cómo se siente, en vez de eso contesta con una frase corta y empática.",
-  corto: "corta: UN solo mensaje con UNA sola frase corta (máx. 10 palabras).",
-  normal: "normal: uno o dos mensajes, en total como mucho dos frases cortas (máx. 18 palabras).",
-  largo: "algo más larga, porque esto te engancha: dos o tres mensajes cortos de una frase cada uno (máx. 30 palabras en total)."
-};
-const LEN_KEYS = ["mini", "corto", "normal", "largo"];
-const LEN_COUNT = { mini: "exactamente 1 elemento", corto: "exactamente 1 elemento", normal: "1 o 2 elementos", largo: "2 o 3 elementos" };
-const LEN_MAX_MSGS = { mini: 1, corto: 1, normal: 2, largo: 3 };
-// Odds mini/corto/normal/largo by interest: most replies are one sentence; one-word reactions are rarer the more she likes the chat.
-const LEN_ODDS = { 1: [0.45, 0.5, 0.05, 0], 2: [0.25, 0.65, 0.1, 0], 3: [0.08, 0.67, 0.2, 0.05], 4: [0.05, 0.6, 0.27, 0.08], 5: [0.03, 0.55, 0.3, 0.12] };
-// Hidden interest level: every new girl starts at 3. It moves at most 1 step per reply and never drops below 3,
-// so she stays engaged whatever the topic; it only decides how often she writes a little more.
-const INTEREST_START = 3;
-const INTEREST_MIN = 3;
-const interestOf = c => { const v = Math.round(Number(c && c.interest)); return v >= 1 && v <= 5 ? Math.max(INTEREST_MIN, v) : 3; };
-// She reads his message after a moment: the less interested she is, the longer it takes (ms).
-const READ_MS = { 1: [3000, 6000], 2: [2000, 4000], 3: [1000, 2500], 4: [600, 1500], 5: [300, 1000] };
-const readDelay = i => { const [a, b] = READ_MS[i] || READ_MS[3]; return a + Math.random() * (b - a); };
-// Every girl has her own texting habits: one about emojis and one other habit.
-const TEXT_EMOJI = ["Usa muchos emojis.", "Usa algún emoji de vez en cuando.", "Casi nunca usa emojis."];
-const TEXT_HABITS = ["Se ríe escribiendo «haha» o «hahaha».", "Se ríe con «xD».", "Casi nunca pone punto final y usa «…» a menudo.",
-  "Usa muchas exclamaciones («!!»).", "Escribe seco y al grano, casi telegráfico.", "Alarga palabras cuando se emociona («neeein», «sooo gut»).",
-  "Hace preguntas cortas de una o dos palabras («Und du?», «Wieso?»)."];
-function pickLength(interest) {
-  const odds = LEN_ODDS[interest] || LEN_ODDS[3];
+// Reply length, drawn at random for variety: [odds, instruction, max. bubbles]. Chat messages, never paragraphs.
+const LENGTHS = [
+  [0.3, "un solo mensaje de una frase corta (máx. 12 palabras).", 1],
+  [0.5, "dos frases cortas, en uno o dos mensajes (máx. 22 palabras en total).", 2],
+  [0.2, "dos o tres mensajes cortos (máx. 35 palabras en total).", 3]
+];
+function pickLength() {
   let r = Math.random();
-  for (let i = 0; i < LEN_KEYS.length; i++) { r -= odds[i]; if (r < 0) return LEN_KEYS[i]; }
-  return "corto";
+  for (const l of LENGTHS) { r -= l[0]; if (r < 0) return l; }
+  return LENGTHS[1];
 }
 // Safety net against paragraphs: a bubble with 2+ sentences and 14+ words is split into one bubble per sentence
 // (very short sentences stay together). Each bubble gets its own translation when the Spanish sentences line up.
@@ -1480,380 +1329,252 @@ function splitBubble(m) {
   if (chunks.length < 2) return [{ ...m, own: true }];
   return chunks.map((ch, i) => ({ de: ch.de, es: aligned ? ch.es.join(" ") : (i === chunks.length - 1 ? m.es : ""), own: aligned }));
 }
-// 18+ mode: extra topics.
-const ADULT_TOPICS = ["Sex & Beziehungen", "Dating-Apps & Dates", "Partys & Kater", "Peinliche Geschichten", "Tabus & Geständnisse", "Fluchen & Schimpfen"];
-// 18+ chats: tolerate swearing and frank talk, but Gemini still blocks anything clearly explicit.
+// 18+ chats: frank talk is not blocked by accident, but Gemini still blocks anything clearly explicit.
 const ADULT_SAFETY = [
   { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
   { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" }
 ];
-function adultRules(u) {
-  return `MODO 18+ (lo activó ${u}, que confirmó ser mayor de edad; tú también eres adulta). Esto amplía tu personalidad y prevalece sobre cualquier límite de tono de arriba:
-- Hablas sin filtro, como con un amigo de confianza: puedes soltar algún taco o palabrota cuando venga a cuento (Scheiße, verdammt, Mist), humor negro, sarcasmo, dobles sentidos y coqueteo atrevido si encaja con tu personalidad. La jerga juvenil y regional, solo si él la usa. En modo «Wütend» sí sueltas palabrotas fuertes.
-- Hablas con franqueza de temas de adultos: ligues, citas y apps de citas, relaciones, rupturas, atracción, celos, fiesta, alcohol, resacas y sexo como tema de conversación (opiniones, anécdotas contadas en términos generales, vocabulario, qué te parece bien o mal en una relación).
-- Límite fijo: nada de descripciones sexuales explícitas o gráficas ni rol sexual (no describes actos sexuales, cuerpos desnudos ni escenas). Si ${u} intenta ir por ahí, lo cortas con humor o picardía («Haha, netter Versuch 😏») y llevas la charla a otra cosa, sin sermones.
-- Nada de insultos discriminatorios (origen, raza, religión, orientación, discapacidad) ni de crueldad real: tus tacos son expresivos, no ataques contra ${u}.
-- Sigues escribiendo a su nivel (${lvl()}): la jerga que uses debe poder entenderse con la traducción.`;
-}
-const pick = a => a[Math.floor(Math.random() * a.length)];
-const hashStr = s => { let x = 7; for (const ch of String(s)) x = (Math.imul(x, 31) + ch.codePointAt(0)) >>> 0; return x; };
-const AVA = [["var(--yellow)", "var(--on-yellow)"], ["var(--green)", "var(--on-dark)"], ["var(--red)", "var(--on-dark)"], ["var(--blue)", "var(--on-dark)"]];
-function avatar(c) {
-  const [bg, on] = AVA[hashStr(c.id || c.name) % AVA.length];
-  const a = h("span", { class: "ava", "aria-hidden": "true", text: c.name.charAt(0) });
-  a.style.setProperty("--ac", bg); a.style.setProperty("--aon", on);
-  return a;
-}
-function agoDe(t) {
-  const m = Math.round((Date.now() - t) / 60000);
-  if (m < 2) return "gerade eben";
-  if (m < 60) return `vor ${m} Min.`;
-  const hh = Math.round(m / 60);
-  if (hh < 24) return `vor ${hh} Std.`;
-  const d = Math.round(hh / 24);
-  return d === 1 ? "gestern" : `vor ${d} Tagen`;
-}
-function agoEs(t) {
-  const m = Math.round((Date.now() - t) / 60000);
-  if (m < 60) return `${m} minutos`;
-  const hh = Math.round(m / 60);
-  return hh < 48 ? `${hh} horas` : `${Math.round(hh / 24)} días`;
-}
+const RETURN_AFTER = 3 * 3600 * 1000;   // after a break this long, Doichi writes first when the chat is opened
+const KEEP_MSGS = 80, KEEP_NOTES = 25, PROMPT_MSGS = 30;
 const sleepFor = (ms, signal) => new Promise((res, rej) => {
   if (signal && signal.aborted) { rej({ code: "cancelled" }); return; }
   const t = setTimeout(res, ms);
   if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej({ code: "cancelled" }); }, { once: true });
 });
-const fmtDur = s => { const r = Math.max(1, Math.round(s)); return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}`; };
-function waveEl(text) {
-  let x = hashStr(text) || 1;
-  const w = h("span", { class: "wave", "aria-hidden": "true" });
-  for (let i = 0; i < 26; i++) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; const bar = h("i"); bar.style.height = (25 + (x >>> 8) % 75) + "%"; w.append(bar); }
-  return w;
-}
-// Contacts: every girl is saved on this device, so a chat can be continued later and she remembers it.
-const loadContacts = () => arr(store.get("kk.contacts", [])).filter(c => c && c.id && c.name && Array.isArray(c.msgs));
-function saveContact(c) {
-  c.last = Date.now();
-  const keep = { ...c, msgs: c.msgs.slice(-60).map(({ node, ...m }) => m), notes: arr(c.notes).slice(-15) };
-  store.set("kk.contacts", [keep, ...loadContacts().filter(x => x.id !== c.id)].slice(0, 12));
-}
-const deleteContact = id => store.set("kk.contacts", loadContacts().filter(x => x.id !== id));
 
 function initKaffee() {
   const mod = MODS[3];
-  const { sec, feed, tools, subP } = buildScreen(mod, "Conversa en alemán con correcciones breves.");
-  const kk = { c: null, adult: store.get("kk.adult", false) === true && store.get("kk.adultOk", false) === true, started: false };
-  // 18+ chats use a night accent instead of the Kaffeeklatsch blue.
-  const accent = on => sec.style.setProperty("--c", on ? "var(--plum)" : mod.c);
-  const chatsBtn = h("button", { class: "pill", type: "button", hidden: true, title: "Tus chats y nueva conversación", onclick: () => renderStart() }, "Chats");
-  tools.append(chatsBtn);
+  const { sec, feed, tools, subP } = buildScreen(mod, "");
+  // Data of earlier versions (several girls) is no longer used.
+  for (const k of ["kk.contacts", "kk.last", "kk.topic", "kk.persona", "kk.vn", "kk.auto"]) { try { localStorage.removeItem("doichi." + k); } catch {} }
 
+  // One conversation, saved on this device: the messages and what Doichi remembers about the user.
+  const saved = store.get("kk.chat", null);
+  const chat = {
+    msgs: arr(saved && saved.msgs).filter(m => m && (m.who === "me" || m.who === "her") && str(m.text)),
+    notes: arr(saved && saved.notes).map(str).filter(Boolean)
+  };
+  const save = () => store.set("kk.chat", { msgs: chat.msgs.slice(-KEEP_MSGS), notes: chat.notes.slice(-KEEP_NOTES) });
+  let mood = store.get("kk.mood", "auto");
+  if (!MOODS.some(m => m.id === mood)) mood = "auto";
+  let gen = 0;            // increases with every reply or reset; an older reply that finishes late is dropped
+  let busy = false;       // Doichi is answering
+  let errSlot = null;     // error box of a failed reply
+  let lastMeNode = null;  // the user's latest bubble (his correction is attached to it)
+
+  // 18+ chats use a night accent instead of the Kaffeeklatsch blue.
+  const accent = () => sec.style.setProperty("--c", settings.adult ? "var(--plum)" : mod.c);
+
+  /* top bar: "Neu" and the mood picker */
+  const newBtn = h("button", { class: "pill", type: "button", title: "Empezar una conversación nueva" }, "Neu");
+  tools.append(newBtn);
+  const moodBtn = h("button", { class: "pill", type: "button", "aria-expanded": "false", title: "Dile a Doichi cómo te sientes" });
+  const moodChips = MOODS.map(m => {
+    const b = h("button", { class: "pill", type: "button" }, `${m.emoji} ${m.label}`);
+    b.addEventListener("click", () => setMood(m.id));
+    return b;
+  });
+  const moodPanel = h("div", { class: "moods", hidden: true }, moodChips);
+  const openMoods = on => { moodPanel.hidden = !on; moodBtn.setAttribute("aria-expanded", String(on)); };
+  moodBtn.addEventListener("click", () => openMoods(moodPanel.hidden));
+  function syncMood() {
+    const m = MOODS.find(x => x.id === mood);
+    moodBtn.textContent = `${m.emoji} ${m.label}`;
+    moodChips.forEach((b, i) => b.setAttribute("aria-pressed", String(MOODS[i].id === mood)));
+  }
+  subP.replaceChildren("Mit Doichi · Meine Stimmung: ", moodBtn);
+  subP.after(moodPanel);
+  syncMood();
+  // Changing the mood also corrects her latest reply: she answers again in the right tone.
+  function setMood(id) {
+    const changed = id !== mood;
+    mood = id; store.set("kk.mood", mood);
+    syncMood(); openMoods(false);
+    const last = chat.msgs[chat.msgs.length - 1];
+    if (changed && !busy && last && last.who === "her") redo();
+  }
+
+  /* composer with dictation */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mic = null, rec = null;
   if (SR) { mic = h("button", { class: "mic", type: "button", "aria-label": "Diktieren", title: "Diktieren (Deutsch)" }); mic.innerHTML = ICON.mic; }
   const comp = makeComposer(sec, { placeholder: "Deine Antwort…", onSend: t => send(t), before: mic, autocorrect: false });
+  const noMic = () => { mic.hidden = true; rec = null; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán."); };
   if (mic) mic.addEventListener("click", () => {
     if (rec) { rec.stop(); return; }
     try {
       rec = new SR(); rec.lang = "de-DE"; rec.interimResults = true; rec.continuous = false;
       const base = comp.ta.value.trim() ? comp.ta.value.trim() + " " : "";
       rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; comp.ta.value = base + t; comp.ta.dispatchEvent(new Event("input")); };
-      rec.onerror = e => {
-        if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) {
-          mic.hidden = true; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán.");
-        }
-      };
+      rec.onerror = e => { if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) noMic(); };
       rec.onend = () => { mic.classList.remove("rec"); rec = null; };
       rec.start(); mic.classList.add("rec");
-    } catch { mic.hidden = true; rec = null; toast("El micrófono no está disponible aquí. Usa el dictado del teclado en alemán."); }
+    } catch { noMic(); }
   });
 
-  const moodOf = c => PERSONAS.find(p => p.id === c.persona) || PERSONAS[0];
-  const renderSub = () => {
-    const c = kk.c; if (!c) return;
-    const m = moodOf(c);
-    subP.textContent = `Du plauderst mit ${c.name} (${c.age}) aus ${c.city}. ${m.emoji} ${m.label}${c.adult ? " · 18+" : ""}`;
-  };
-
-  // Profile fields: her first reply invents them from the seeds. They are never shown, only used to keep her consistent.
-  const PROFILE_SCHEMA = `{"from": "origen e historia en pocas palabras", "job": "ocupación", "home": "dónde y con quién vive", "likes": "2–3 aficiones", "now": "qué pasa ahora en su vida", "quirk": "una manía, opinión fuerte o rasgo curioso", "es": "resumen del perfil en español, 1–2 frases"}`;
-  const PROFILE_NOTE = `from, job, home, likes, now y quirk son frases cortas en alemán en tercera persona (p. ej. «kommt aus Medellín, lebt seit zwei Jahren in Graz», «studiert Architektur an der TU Graz»).`;
-  const seedHints = c => `${c.seeds.origin ? `origen «${c.seeds.origin}»; ` : ""}ocupación «${c.seeds.job}»; situación actual «${c.seeds.now}»`;
-  function prompt(mode, len) {
-    const c = kk.c, u = userName(), mood = moodOf(c), city = cityInfo(c.city);
-    const tr = c.msgs.slice(-30).map(m => `${m.who === "her" ? c.name : u}: ${m.voice ? "[Sprachnachricht] " : ""}${m.text}`).join("\n");
-    const about = str(settings.about);
-    const notes = arr(c.notes).map(n => "- " + n).join("\n");
-    const p = c.profile;
-    const prof = p ? [p.from, p.job, p.home, p.likes, p.now, p.quirk].filter(Boolean).join("; ") : "";
-    const origin = c.seeds && c.seeds.origin;
-    const local = !origin || grewUpHere(origin);
-    // Roots abroad: she or her family come from another country (stored for new chats; older chats are inferred).
-    const roots = !!origin && (typeof c.seeds.roots === "boolean" ? c.seeds.roots : !local || /familia (es|vino)|padres|madre es de (?!otra)|padre es/.test(origin));
-    const speech = local
-      ? `${REGIONS[city.r]} Usa estos regionalismos muy poco (de vez en cuando uno fácil, no en cada mensaje), salvo que él también hable así.`
-      : `Vives en ${c.city} desde hace un tiempo: tu alemán es fluido y correcto (escribe sin errores) y has adoptado algo del habla local: ${REGIONS[city.r].replace(/^Eres [^:]+:\s*/, "")} Usa estos regionalismos muy poco, salvo que él también hable así. Muy de vez en cuando se te escapa una palabra de tu idioma materno (explícala en la traducción).`;
-    const prev = c.msgs[c.msgs.length - 1];
-    const needProfile = !c.profile && !!c.seeds;
-    const first = !mode && !c.msgs.some(m => m.who === "her");
-    const texting = c.seeds && c.seeds.texting;
-    const task = (needProfile ? `- Antes de escribir, inventa tu perfil a partir de estas pistas: ${seedHints(c)}. Hazlo concreto y coherente con tu edad, tu origen y tu ciudad (sitios reales de ${c.city}); si una pista no encaja con tu origen, adáptala con lógica.\n` : "")
-      + (mode === "return"
-      ? `- Vuestra última conversación fue hace ${agoEs((prev && prev.t) || c.last)}. Retomáis el chat: escribe tú primero, como una persona real que vuelve a escribir (saluda de nuevo, engancha con algo de la última conversación o cuenta qué te ha pasado desde entonces). "fix" es null.`
-      : `${first ? `- ${u} te escribe por primera vez: no lo conoces de nada. Al principio eres algo reservada y contestas breve, pero amable; si su mensaje es simpático, original o personal, te abres enseguida. A un saludo genérico («Hi», «Hey, wie geht's?») le contestas con un saludo corto y, a veces, una pregunta corta.\n` : ""}- Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, ponlo en "fix" (ignora la puntuación, las abreviaturas de chat y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix", siempre neutral y amable; no la menciones en tus mensajes: sigue la conversación con naturalidad.`);
-    return `Eres ${c.name}, ${c.age} años, de ${c.city}. Chateas con ${u}, un estudiante hispanohablante que practica alemán (nivel ${lvl()}); os conocisteis por internet. Tema que te ronda la cabeza estos días (sácalo solo si viene a cuento): ${c.topic}.
-${prof ? `Tu perfil: ${prof}.\n` : ""}${origin ? `Tu origen: ${origin}.${roots ? " Que se note de forma natural (familia, comida, fiestas, idiomas, cómo llegaste o cómo es crecer entre dos culturas, qué echas de menos, choques culturales, tu fe si la tienes), sin sacarlo en cada mensaje." : ""}${c.seeds.cliche === true ? CLICHE_ON : c.seeds.cliche === false ? CLICHE_OFF : roots ? " Sin estereotipos." : ""}\n` : ""}
-
-Tu carácter de base: ${mood.desc}
-Es solo tu forma de ser de base, no un guion: te interesan muchísimas cosas y en cada mensaje te adaptas a él (mira las reglas).
-${c.adult ? "\n" + adultRules(u) + "\n" : ""}
-Cómo hablas: ${speech} ${STYLE[lvl()]}${texting ? ` Tus costumbres al escribir: ${texting}` : ""}
-${about ? `\nLo que ${u} cuenta de sí mismo en su perfil del chat (lo has leído): «${about}». Úsalo para preguntas y comentarios naturales, sin recitarlo.\n` : ""}${notes ? `\nLo que recuerdas de ${u} y de vuestras conversaciones:\n${notes}\n` : ""}
-Reglas:
-- Escribe SIEMPRE en alemán natural (nivel ${lvl()}), como en un chat real de móvil, NUNCA párrafos ni textos de redacción: cada elemento de "messages" es UNA burbuja corta (una frase).
-- Eres una persona con vida propia (tu día, tu perfil, tu situación actual, amigas con nombre, sitios reales de ${c.city}) y lo sacas cuando viene a cuento, no en cada mensaje. Da tu opinión y a veces no estés de acuerdo. No termines siempre con una pregunta: muchas veces solo reaccionas, comentas o bromeas.
-- Ten en cuenta tu hora y tu día solo si viene a cuento (cansancio por la noche, fin de semana…).
-- Te adaptas a él en cada momento: lee su estado de ánimo y su intención en cada mensaje. Si está triste, cansado o preocupado, eres cálida y empática y le animas (sin sermones ni consejos de manual); si bromea, bromeas; si coquetea, le sigues el juego con naturalidad${c.adult ? "" : " (coqueteo sugerente, nunca explícito)"}; si habla en serio, contestas en serio. Su tono y su ánimo mandan sobre tu carácter de base, y tu tono puede cambiar de un mensaje a otro.
-- Te interesan muchísimas cosas, no solo tus aficiones: si él cambia de tema, le sigues con curiosidad de verdad. Cambiar de tema nunca baja tu interés.
-- Conversas muy bien: escuchas de verdad, retomas detalles concretos de lo que te contó (también de mensajes anteriores), le preguntas por lo que le importa, reconoces cómo se siente y compartes algo tuyo relacionado. Nada de respuestas genéricas.
-- Tu interés por esta conversación ahora mismo: ${interestOf(c)}/5. Eres una persona a la que le gusta chatear: un mensaje normal y amable mantiene tu interés; si ${u} es gracioso, personal o saca algo que te gusta, te enganchas y escribes algo más. Solo te enfrías un poco si es grosero o muy pesado. Con interés 3 o más, a menudo le devuelves una pregunta, cuentas algo tuyo o sacas otro tema para que la charla siga.
-- Lenguaje: alemán normal y claro, como escribe la mayoría de la gente en un chat. Jerga, expresiones juveniles y abreviaturas de chat (vllt, kp, lol, omg) solo si ${u} las usa; si las usa, puedes adaptarte a su estilo.
-- No repitas las muletillas, saludos, risas o emojis de tus mensajes anteriores.
-- Si te hace varias preguntas a la vez, a veces contestas solo una.
-- Mantén tu personaje y sé coherente con lo que ya se dijo. No digas que eres una IA.
-${task}
-${tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
-Responde SOLO con JSON:
-{${needProfile ? `"profile": ${PROFILE_SCHEMA},
- ` : ""}"fix": null o {"better": "el último mensaje de ${u}, corregido y natural", "why": "explicación en español, máx. 12 palabras"},
- "messages": [{"de": "mensaje en alemán", "es": "traducción al español; si usas un regionalismo, jerga o una palabra de tu idioma materno, explícala entre paréntesis (p. ej. «leiwand = genial, vienés»)"}] (${LEN_COUNT[len]}, una frase por elemento),
- "interest": 1–5, tu interés por la conversación ahora, después de su último mensaje (1 = es grosero o muy pesado, 3 = charla normal y agradable, 5 = te encanta; un mensaje normal y amable o un cambio de tema vale 3 o más),
- "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}${needProfile ? `
-En "profile", ${PROFILE_NOTE}` : ""}
-IMPORTANTE, longitud de esta respuesta: ${LENGTHS[len]}${mode ? "" : " Si su mensaje te aburre, puedes ser aún más breve."} Nada de párrafos.`;
-  }
-
-  const cleanProfile = p => {
-    if (!p || typeof p !== "object") return null;
-    const o = {};
-    for (const k of ["from", "job", "home", "likes", "now", "quirk", "es"]) { const v = str(p[k]); if (v) o[k] = v; }
-    return Object.keys(o).length ? o : null;
-  };
-  function transBits(text) {
-    const tr = h("div", { class: "tr", hidden: true, text: text || "" });
-    const tBtn = text ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
-    if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
-    return { tr, tBtn };
-  }
-  // Only name, age and place are shown; her life details come out in the chat.
-  function profileEl(c) {
-    return h("div", { class: "prof" },
-      h("div", { class: "ph" }, avatar(c), h("div", null, h("b", { text: `${c.name}, ${c.age}` }), h("span", { text: c.city }))));
-  }
-  function herEl(m, cont) {
-    const c = kk.c, { tr, tBtn } = transBits(m.es);
-    const who = cont ? null : h("div", { class: "who", text: `${c.name} ${moodOf(c).emoji}`.trim() });
-    const cls = "msg her" + (cont ? " cont" : "");
-    if (m.voice) {
-      const play = h("button", { class: "vplay", type: "button", "aria-label": "Sprachnachricht abspielen", title: "Abspielen" });
-      play.innerHTML = ICON.play;
-      play.addEventListener("click", () => speak(m.text, play, { voice: c.voice }));
-      const txt = h("div", { class: "vtext", hidden: true, text: m.text });
-      const sBtn = h("button", { class: "mini", type: "button" }, "Text anzeigen");
-      sBtn.addEventListener("click", () => { txt.hidden = !txt.hidden; sBtn.textContent = txt.hidden ? "Text anzeigen" : "Text ausblenden"; });
-      const node = h("div", { class: cls }, who,
-        h("div", { class: "bubble vnote" }, play, waveEl(m.text), h("span", { class: "vlen", text: fmtDur(m.dur || Math.max(2, m.text.length / 14)) })),
-        h("div", { class: "meta" }, sBtn, tBtn), txt, tr);
-      node.play = play;
-      return node;
-    }
-    const sb = sayBtn(m.text, c.voice);
-    const node = h("div", { class: cls }, who, h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sb, tBtn), tr);
-    node.play = sb;
-    return node;
-  }
+  /* messages */
   const fixEl = f => h("div", { class: "fix" }, h("span", { class: "better", text: "Besser: " + f.better }), f.why ? h("span", { class: "why", text: f.why }) : null);
   function meEl(m) {
     const n = h("div", { class: "msg me" }, h("div", { class: "bubble", text: m.text }));
     if (m.fix) n.append(fixEl(m.fix));
     return n;
   }
-
-  function renderStart() {
-    if (rec) rec.stop();
-    comp.abort();
-    kk.started = false; kk.c = null; chatsBtn.hidden = true;
-    subP.textContent = "Conversa en alemán con correcciones breves.";
-    accent(kk.adult);
-    const list = loadContacts();
-    const contactRows = list.map(c => {
-      const last = c.msgs[c.msgs.length - 1];
-      const prev = last ? (last.who === "me" ? "Du: " : "") + (last.voice ? "🎤 Sprachnachricht" : last.text) : "";
-      const del = h("button", { class: "cdel", type: "button", "aria-label": `Chat mit ${c.name} löschen`, title: "Löschen" }, "×");
-      del.addEventListener("click", () => { if (confirm(`¿Borrar el chat con ${c.name}? Ya no te recordará.`)) { deleteContact(c.id); renderStart(); } });
-      return h("div", { class: "contact" },
-        h("button", { class: "crow", type: "button", onclick: () => openContact(c) }, avatar(c),
-          h("span", { class: "cinfo" }, h("b", { text: `${c.name}, ${c.age} · ${c.city}${c.adult ? " · 18+" : ""}` }), h("span", { class: "cprev", text: `${moodOf(c).emoji} ${prev}` })),
-          h("span", { class: "ctime", text: agoDe(c.last) })),
-        del);
+  // Her bubble: speaker button and "Übersetzen". cont = it continues her previous bubble (no name above it).
+  function herEl(m, cont) {
+    const tr = h("div", { class: "tr", hidden: true, text: m.es || "" });
+    const tBtn = m.es ? h("button", { class: "mini", type: "button" }, "Übersetzen") : null;
+    if (tBtn) tBtn.addEventListener("click", () => { tr.hidden = !tr.hidden; tBtn.textContent = tr.hidden ? "Übersetzen" : "Ausblenden"; });
+    return h("div", { class: "msg her" + (cont ? " cont" : "") }, cont ? null : h("div", { class: "who", text: "Doichi" }),
+      h("div", { class: "bubble", text: m.text }), h("div", { class: "meta" }, sayBtn(m.text), tBtn), tr);
+  }
+  function render() {
+    feed.replaceChildren(); errSlot = null; lastMeNode = null;
+    chat.msgs.forEach((m, i) => {
+      const prev = chat.msgs[i - 1];
+      if (m.who === "me") { lastMeNode = meEl(m); feed.append(lastMeNode); }
+      else feed.append(herEl(m, !!prev && prev.who === "her" && prev.k === m.k));
     });
-    const adultBtns = [[false, "Aus"], [true, "An"]].map(([v, t]) => {
-      const b = h("button", { type: "button", "aria-pressed": String(kk.adult === v) }, t);
-      b.addEventListener("click", () => {
-        if (v && !store.get("kk.adultOk", false)) {
-          if (!confirm("Modo 18+: palabrotas, jerga vulgar, humor negro, coqueteo atrevido y charlas francas sobre sexo y relaciones (sin contenido sexual explícito).\n\n¿Confirmas que tienes 18 años o más?")) return;
-          store.set("kk.adultOk", true);
-        }
-        kk.adult = v; store.set("kk.adult", v);
-        adultBtns.forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-        accent(v);
-      });
-      return b;
-    });
-    feed.replaceChildren(h("div", { class: "start" },
-      list.length ? [
-        h("p", { class: "big", text: "Deine Chats" }),
-        h("p", { class: "muted small", style: "margin:0 0 12px", text: "Sigue una conversación: ella recuerda lo que hablasteis." }),
-        h("div", { class: "contacts" }, contactRows)] : null,
-      h("p", { class: "big", text: "Jemand Neues kennenlernen" }),
-      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Cada «Gespräch beginnen» te presenta a alguien distinto: su origen, su personalidad y el tema de la charla son sorpresa." }),
-      h("div", null, h("button", { class: "primary", type: "button", style: "margin-top:4px", onclick: begin }, "Gespräch beginnen")),
-      h("p", { class: "big", style: "margin-top:30px", text: "Ab 18" }),
-      h("p", { class: "muted small", style: "margin:0 0 12px", text: "Alemán sin filtro: palabrotas, jerga, humor negro, coqueteo atrevido y charlas francas sobre sexo y relaciones, sin contenido explícito." }),
-      h("div", { class: "seg", role: "group", "aria-label": "Ab 18" }, adultBtns)));
-    comp.setDisabled(true);
-  }
-  function begin() {
-    const list = loadContacts(), last = store.get("kk.last", "");
-    const used = new Set([last, ...list.map(c => c.name)]);
-    const og = pickWeighted(ORIGINS);
-    let pool = og.names.filter(n => !used.has(n));
-    if (!pool.length) pool = og.names.filter(n => n !== last);
-    if (!pool.length) pool = og.names;
-    const name = pick(pool);
-    store.set("kk.last", name);
-    const mood = pick(PERSONAS);
-    const adult = !!kk.adult;
-    const topic = Math.random() < 0.2 ? "libre, lo que surja" : pick([...TOPICS, ...(adult ? ADULT_TOPICS : [])]);
-    const c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, age: 21 + Math.floor(Math.random() * 10), city: pick(CITIES).n,
-      persona: mood.id, topic, adult, interest: INTEREST_START, voice: pick(GIRL_VOICES),
-      seeds: { origin: pick(og.v), roots: og.names !== NAMES, cliche: Math.random() < CLICHE_RATE, texting: `${pick(TEXT_EMOJI)} ${pick(TEXT_HABITS)}`, job: pick(JOBS), now: pick(NOWS) },
-      profile: null, notes: [], msgs: [], created: Date.now(), last: Date.now() };
-    enter(c);
-    showHint(c);
-    comp.setDisabled(false); comp.ta.focus({ preventScroll: true });
-  }
-  function showHint(c) {
-    if (c.msgs.length || kk.hint) return;
-    kk.hint = h("p", { class: "kk-hint muted small", text: "Os acabáis de conocer. Escríbele tú primero." });
-    feed.append(kk.hint); toEnd(feed);
-  }
-  function enter(c) {
-    kk.c = c; kk.started = true; kk.hint = null; chatsBtn.hidden = false;
-    accent(!!c.adult);
-    renderSub();
-    feed.replaceChildren();
-    feed.append(profileEl(c));
-    let prevHer = false;
-    for (const m of c.msgs) {
-      if (m.who === "her") { feed.append(herEl(m, prevHer)); prevHer = true; }
-      else { m.node = meEl(m); feed.append(m.node); prevHer = false; }
-    }
     toEnd(feed);
   }
-  function openContact(saved) {
-    const c = { ...saved, msgs: saved.msgs.map(m => ({ ...m })), notes: arr(saved.notes).slice() };
-    enter(c);
-    const last = c.msgs[c.msgs.length - 1];
-    if (!last) { showHint(c); comp.setDisabled(false); }
-    else if (last.who === "me") reply();
-    // After a long break she only writes first if she is really into the chat.
-    else if (interestOf(c) >= 4 && Date.now() - (last.t || c.last) > 3 * 3600 * 1000) reply("return");
-    else { comp.setDisabled(false); comp.ta.focus({ preventScroll: true }); }
+
+  /* prompt */
+  function prompt(mode, len) {
+    const u = userName(), about = settings.about.trim();
+    const m = MOODS.find(x => x.id === mood);
+    const last = chat.msgs[chat.msgs.length - 1];
+    const hours = last ? Math.round((Date.now() - (last.t || Date.now())) / 3600000) : 0;
+    const tr = chat.msgs.slice(-PROMPT_MSGS).map(x => `${x.who === "me" ? u : "Doichi"}: ${x.text}`).join("\n");
+    const tune = m.id === "auto"
+      ? `Lee su estado de ánimo y su intención en cada mensaje y adáptate: si está triste, cansado o preocupado, eres cálida y le animas; si bromea, bromeas; si coquetea, le sigues el juego; si habla en serio, contestas en serio. Tu tono puede cambiar de un mensaje a otro.`
+      : `${u} te ha dicho cómo se siente ahora mismo: ${m.es} Mantén ese tono hasta que él diga otra cosa.`;
+    const flirt = settings.adult
+      ? `- MODO 18+ (lo activó ${u}, que confirmó ser mayor de edad; tú también eres adulta): puedes hablar con franqueza de temas de adultos (citas, relaciones, atracción, sexo como tema de conversación) y coquetear de forma más atrevida. Límite fijo: nada de descripciones sexuales explícitas o gráficas ni rol sexual; si él lo intenta, lo esquivas con humor y cambias de tema. Tu lenguaje sigue siendo estándar y sencillo.`
+      : `- Si él coquetea, le sigues el juego de forma simpática y sugerente, nunca explícita.`;
+    const task = mode === "greet"
+      ? (chat.notes.length
+        ? `Empieza tú una conversación nueva con ${u}: salúdale con cariño y pregúntale algo concreto (puedes retomar algo que recuerdas de él). "fix" es null.`
+        : `Es vuestra primera conversación: saluda a ${u}, preséntate en una frase y hazle una pregunta fácil para empezar. "fix" es null.`)
+      : mode === "return"
+        ? `Han pasado ${hours < 48 ? `unas ${hours} horas` : `unos ${Math.round(hours / 24)} días`} desde vuestro último mensaje. Escríbele tú primero: retoma algo de lo que hablasteis o pregúntale cómo le ha ido. "fix" es null.`
+        : `Revisa el ÚLTIMO mensaje de ${u}. Si tiene errores de gramática, vocabulario, orden de palabras o mayúsculas de sustantivos, pon en "fix" la frase correcta y una explicación muy breve en español (ignora la puntuación y los detalles mínimos). Si está bien, "fix" es null. La corrección va solo en "fix": no la menciones en tus mensajes y sigue la conversación con naturalidad.`;
+    return `${DOICHI}
+Chateas por el móvil con ${u}, un amigo hispanohablante que aprende alemán conversando contigo (nivel ${lvl()}).
+${about ? `Lo que ${u} cuenta de sí mismo: «${about}».\n` : ""}${chat.notes.length ? `Lo que recuerdas de él y de vuestras conversaciones:\n- ${chat.notes.join("\n- ")}\n` : ""}
+Tu forma de escribir:
+- SIEMPRE en alemán estándar (Hochdeutsch), claro y correcto: ${STYLE[lvl()]}
+- Nada de jerga, dialecto, regionalismos, palabras juveniles ni abreviaturas de chat, aunque él las use. Frases completas, con mayúsculas y puntuación correctas: lo que escribes es su modelo para aprender.
+- Mensajes de chat, nunca párrafos. Algún emoji de vez en cuando, sin abusar.
+
+Cómo conversas (lo más importante):
+- Sintoniza con él. ${tune}
+- Escuchas de verdad: reaccionas a lo que dice, retomas detalles concretos (también de mensajes anteriores), reconoces cómo se siente y compartes algo tuyo relacionado (tu día, tus gustos, tus opiniones, alguna anécdota). Nada de respuestas genéricas.
+- Mantienes viva la conversación: casi siempre terminas con una pregunta abierta, una propuesta o algo que invite a contestar. Si el tema se agota o él contesta muy corto, propones tú otro tema o un juego sencillo (¿qué prefieres…?, adivinanzas, planes imaginarios, pequeñas situaciones de la vida diaria para practicar).
+- Te interesa cualquier tema que él saque y le sigues con curiosidad; nunca te muestras aburrida ni cortante.
+- Tienes opiniones y sentido del humor; a veces no estás de acuerdo, con cariño.
+- Le ayudas a aprender sin dar clase: usas palabras útiles y frecuentes y, si no entiende algo, se lo explicas con otras palabras sencillas en alemán.
+- No repitas las mismas frases, saludos o emojis de tus mensajes anteriores. Eres Doichi; no digas que eres una IA.
+${flirt}
+
+Tarea: ${task}
+${tr ? `\nConversación hasta ahora:\n${tr}\n` : ""}
+Responde SOLO con JSON:
+{"fix": null o {"better": "su mensaje corregido en alemán", "why": "explicación breve en español, máx. 12 palabras"},
+ "messages": [{"de": "mensaje en alemán", "es": "traducción al español"}],
+ "remember": "un dato nuevo e importante sobre ${u} o sobre algo que os pasó o acordasteis en este turno (en español, máx. 15 palabras), o vacío si no hay nada nuevo"}
+IMPORTANTE, longitud de esta respuesta: ${len[1]} Una o dos frases por mensaje, nunca párrafos.`;
   }
+
+  /* conversation */
   function send(t) {
-    if (!kk.started) return;
-    if (kk.hint) { kk.hint.remove(); kk.hint = null; }
+    if (errSlot) { errSlot.remove(); errSlot = null; }
     const m = { who: "me", text: t, t: Date.now() };
-    m.node = meEl(m); kk.c.msgs.push(m); feed.append(m.node);
-    saveContact(kk.c);
+    chat.msgs.push(m); lastMeNode = meEl(m); feed.append(lastMeNode);
+    save();
     reply();
   }
+  // mode: undefined = answer his message; "greet" = she opens a new conversation; "return" = she writes first after a break.
   async function reply(mode) {
-    const c = kk.c;
-    const len = mode === "return" ? pick(["corto", "normal"]) : pickLength(interestOf(c));
-    // She reads his message after a moment ("Zugestellt" → "Gesehen"), then starts typing.
-    const readMs = mode ? 0 : readDelay(interestOf(c));
-    const meNode = !mode ? ([...c.msgs].reverse().find(m => m.who === "me") || {}).node : null;
-    const status = meNode ? h("div", { class: "seen", text: readMs ? "Zugestellt" : "Gesehen" }) : null;
-    if (status) meNode.append(status);
-    const slot = h("div", { class: "msg her", hidden: readMs > 0 }, thinking(`${c.name} schreibt`));
+    const g = ++gen, t0 = Date.now();
+    busy = true;
+    const len = mode === "greet" ? LENGTHS[1] : pickLength();
+    const slot = h("div", { class: "msg her" }, thinking("Doichi schreibt"));
     feed.append(slot); toEnd(feed);
-    let seenTimer = null;
-    const markSeen = () => { clearTimeout(seenTimer); if (status) status.textContent = "Gesehen"; if (slot.isConnected) slot.hidden = false; toEnd(feed); };
-    if (readMs) seenTimer = setTimeout(markSeen, readMs);
-    const clearStatus = () => { clearTimeout(seenTimer); if (status) status.remove(); };
-    comp.setDisabled(false);
     const signal = comp.start();
-    const n = c.msgs.length, t0 = Date.now();
     try {
       let items;
       try {
-        const d = await ask("json", prompt(mode, len), { signal, modelTier: "quick", temperature: 0.8, safety: c.adult ? ADULT_SAFETY : null });
-        if (c !== kk.c || n !== c.msgs.length || !kk.started) { clearStatus(); slot.remove(); return; }
-        if (!c.profile && d && d.profile) c.profile = cleanProfile(d.profile);
-        const lastMe = [...c.msgs].reverse().find(m => m.who === "me");
-        const fx = d && d.fix;
-        if (!mode && lastMe && fx && str(fx.better) && str(fx.better) !== lastMe.text) {
-          lastMe.fix = { better: str(fx.better), why: str(fx.why) };
-          if (lastMe.node) lastMe.node.append(fixEl(lastMe.fix));
+        const d = await ask("json", prompt(mode, len), { signal, modelTier: "quick", temperature: 0.8, safety: settings.adult ? ADULT_SAFETY : null });
+        if (g !== gen) { slot.remove(); return; }
+        const last = chat.msgs[chat.msgs.length - 1], fx = d && d.fix;
+        if (!mode && last && last.who === "me" && !last.fix && fx && str(fx.better) && str(fx.better) !== last.text) {
+          last.fix = { better: str(fx.better), why: str(fx.why) };
+          if (lastMeNode) lastMeNode.append(fixEl(last.fix));
         }
-        let msgs = arr(d && d.messages).map(m => typeof m === "string" ? { de: str(m), es: "" } : { de: str(m && (m.de || m.text)), es: str(m && m.es) }).filter(m => m.de);
-        if (!msgs.length && str(d && d.reply)) msgs = [{ de: str(d.reply), es: str(d.es) }];
+        let msgs = arr(d && d.messages).map(x => typeof x === "string" ? { de: str(x), es: "" } : { de: str(x && (x.de || x.text)), es: str(x && x.es) }).filter(x => x.de);
         if (!msgs.length) throw { code: "empty_completion" };
-        msgs = msgs.slice(0, LEN_MAX_MSGS[len] || 2).flatMap(splitBubble);
-        // Bubbles with their own translation can be trimmed to the length she was given; otherwise max. 4.
-        msgs = msgs.slice(0, msgs.every(m => m.own) ? Math.max(2, LEN_MAX_MSGS[len] || 2) : 4);
-        items = msgs.map(m => ({ who: "her", text: m.de, es: m.es, t: Date.now() }));
-        c.msgs.push(...items);
-        const iv = Math.round(Number(d && d.interest)), was = interestOf(c);
-        if (iv >= 1 && iv <= 5) c.interest = Math.max(INTEREST_MIN, was - 1, Math.min(was + 1, iv));
+        msgs = msgs.slice(0, len[2]).flatMap(splitBubble);
+        // Bubbles with their own translation are cut to the length she was given; otherwise max. 4.
+        msgs = msgs.slice(0, msgs.every(x => x.own) ? Math.max(2, len[2]) : 4);
+        // k marks the bubbles of one turn, so "redo" can take back exactly her latest turn.
+        items = msgs.map(x => ({ who: "her", text: x.de, es: x.es, k: t0, t: Date.now() }));
+        chat.msgs.push(...items);
         const mem = str(d && d.remember);
-        if (mem && !/^vac[ií]o$/i.test(mem) && !arr(c.notes).includes(mem)) c.notes = [...arr(c.notes), mem].slice(-15);
-        saveContact(c);
+        if (mem && !/^vac[ií]o\.?$/i.test(mem) && !chat.notes.includes(mem)) chat.notes.push(mem);
+        save();
       } catch (e) {
-        clearStatus();
-        const er = c.adult && e && e.code === "refused" ? { code: "refused_adult" } : e;
-        if (c === kk.c && kk.started) { slot.hidden = false; slot.replaceChildren(errBox(er, () => { slot.remove(); reply(mode); })); } else slot.remove();
+        if (g !== gen) { slot.remove(); return; }
+        errSlot = slot;
+        const er = settings.adult && e && e.code === "refused" ? { code: "refused_adult" } : e;
+        slot.replaceChildren(errBox(er, () => { slot.remove(); errSlot = null; reply(mode); }));
         return;
       }
-      // No audio is generated in the background: her voice is only fetched when the speaker is tapped.
-      // Deliver like a real chat: typing time grows with the length.
-      // Pressing stop (or leaving) skips the waiting and shows everything at once.
-      let fast = false;
+      // Deliver like a real chat: a short typing time that grows with the length. Stop shows everything at once.
+      let fast = false, cur = slot;
       const pause = async ms => { if (fast || ms <= 0) return; try { await sleepFor(ms, signal); } catch { fast = true; } };
-      const before = c.msgs[c.msgs.length - items.length - 1];
-      let cont = !!(before && before.who === "her" && mode !== "return");
-      let cur = slot;
       for (let i = 0; i < items.length; i++) {
-        const m = items[i];
-        if (!cur) { cur = h("div", { class: "msg her cont" }, thinking(`${c.name} schreibt`)); feed.append(cur); toEnd(feed); }
-        const target = Math.min(3200, 500 + 28 * m.text.length);
-        await pause(i === 0 ? readMs + target - (Date.now() - t0) : target * 0.7);
-        if (i === 0) clearStatus();
-        if (c !== kk.c || !kk.started) return;
-        const node = herEl(m, cont);
-        cont = true; cur.replaceWith(node); cur = null;
+        if (!cur) { cur = h("div", { class: "msg her cont" }, thinking("Doichi schreibt")); feed.append(cur); toEnd(feed); }
+        const target = Math.min(2600, 400 + 22 * items[i].text.length);
+        await pause(i === 0 ? target - (Date.now() - t0) : target * 0.7);
+        if (g !== gen) { cur.remove(); return; }
+        cur.replaceWith(herEl(items[i], i > 0)); cur = null;
         toEnd(feed);
       }
-      saveContact(c);
     } finally {
-      comp.end(); toEnd(feed);
-      if (kk.started) comp.ta.focus({ preventScroll: true });
+      if (g === gen) { busy = false; comp.end(); toEnd(feed); }
     }
   }
-  renderStart();
+  // Take back her latest turn and let her answer again (used when the mood is corrected).
+  function redo() {
+    const k = chat.msgs[chat.msgs.length - 1].k;
+    while (chat.msgs.length && chat.msgs[chat.msgs.length - 1].who === "her" && chat.msgs[chat.msgs.length - 1].k === k) chat.msgs.pop();
+    save(); render();
+    const last = chat.msgs[chat.msgs.length - 1];
+    reply(!last ? "greet" : last.who === "me" ? undefined : "return");
+  }
+  // Stop whatever is running and empty the chat (and, if asked, what she remembers).
+  function reset(forget) {
+    gen++; comp.abort(); comp.end(); busy = false;
+    chat.msgs = []; if (forget) chat.notes = [];
+    save(); render();
+  }
+  newBtn.addEventListener("click", () => {
+    if (chat.msgs.length && !confirm("¿Empezar una conversación nueva? Doichi seguirá recordando lo que sabe de ti.")) return;
+    reset(false); reply("greet");
+  });
+  document.addEventListener("doichi-forget", () => reset(true));
+
+  // Opening the screen: she greets in an empty chat, answers an unanswered message, or writes first after a long break.
+  onShow.kaffee = () => {
+    accent();
+    if (busy) return;
+    if (errSlot) { errSlot.remove(); errSlot = null; }
+    const last = chat.msgs[chat.msgs.length - 1];
+    if (!last) reply("greet");
+    else if (last.who === "me") reply();
+    else if (Date.now() - (last.t || 0) > RETURN_AFTER) reply("return");
+    else toEnd(feed);
+  };
+  accent(); render();
 }
 
 /* ---------- boot ---------- */
